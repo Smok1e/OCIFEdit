@@ -78,24 +78,29 @@ const uint8_t* HexFont::Glyph::getData() const
 
 void HexFont::loadFromStream(std::istream& stream)
 {
-	std::string line;
-	std::vector<uint8_t> data;
-	while (stream.peek() != EOF && std::getline(stream, line))
+	constexpr size_t buffsize = 1024;
+	char line[buffsize];
+
+	while (stream.peek() != EOF && stream.getline(line, buffsize))
 	{
-		auto pos = line.find(':');
-		if (pos == std::string::npos)
+		const char* delimiter = std::strchr(line, ':');
+		if (!delimiter)
 		{
 			std::cerr << "Delimiter not found" << std::endl;
 			continue;
 		}
 
-		uint32_t code = std::stoul(line.substr(0, pos), nullptr, 16);
+		size_t delimiter_offset = delimiter - line;
 
-		data.clear();
-		for (size_t i = pos+1; i < line.length(); i += 2)
-			data.push_back(HEX2BYTE(line[i], line[i+1]));
+		size_t line_length = std::strlen(line);
+		size_t data_size = (line_length - delimiter_offset - 1) / 2;
 
-		m_data.insert({code, Glyph(data.data(), data.size())});
+		uint8_t* data = new uint8_t[data_size];
+		for (size_t i = 0, offset = delimiter_offset + 1; i < data_size; i++, offset += 2)
+			data[i] = HEX2BYTE(line[offset], line[offset+1]);
+
+		uint32_t code = std::strtoul(line, nullptr, 16);
+		m_data.insert({code, Glyph(data, data_size)});
 	}
 }
 

@@ -81,7 +81,7 @@ void Image::loadFromStream(std::istream& stream)
 	auto alpha_count = ReadBytes(stream) + is7;
 	for (size_t alpha = 0; alpha < alpha_count; alpha++)
 	{
-		auto current_alpha = static_cast<double>(ReadBytes(stream) + is7) / 0xFF;
+		auto current_alpha = static_cast<double>(ReadBytes(stream)) / 0xFF;
 
 		auto character_count = ReadBytes(stream, 2) + is7;
 		for (size_t character = 0; character < character_count; character++)
@@ -128,7 +128,7 @@ void Image::loadFromFile(const std::filesystem::path& path)
 {
 	std::ifstream stream;
 	stream.exceptions(stream.exceptions() | std::ios::failbit);
-	stream.open(path);
+	stream.open(path, std::ios::binary);
 
 	loadFromStream(stream);
 }

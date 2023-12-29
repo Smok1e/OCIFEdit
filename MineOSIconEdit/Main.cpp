@@ -1,4 +1,5 @@
 #include "Main.hpp"
+#include <Windows.h>
 
 //===========================================
 
@@ -60,8 +61,10 @@ void Main::start()
 
 void Main::loadFile(const std::filesystem::path& path)
 {
+	/*
 	try
 	{
+	*/
 		m_ocif_image.loadFromFile(path);
 		m_ocif_image.rasterize(m_image, m_font);
 		m_texture.loadFromImage(m_image);
@@ -72,12 +75,14 @@ void Main::loadFile(const std::filesystem::path& path)
 		auto window_size = m_window.getSize();
 		auto bounds = m_sprite.getGlobalBounds();
 		m_sprite.setPosition(window_size.x / 2 - bounds.width / 2, window_size.y / 2 - bounds.height / 2);
+	/*
 	}
 
 	catch (std::exception exc)
 	{
 		printf("%s\n", exc.what());
 	}
+	*/
 }
 
 //===========================================
