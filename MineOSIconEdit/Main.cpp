@@ -1,9 +1,11 @@
 #include "Main.hpp"
+#include "Braille.hpp"
+
 #include <Windows.h>
 
 //===========================================
 
-int main()
+int main(int argc, char* argv[])
 {
 	Main main;
 	main.start();
@@ -31,6 +33,11 @@ void Main::init()
 		return;
 	}
 
+	loadRecentFilesList();
+
+	m_default_cursor.loadFromSystem(sf::Cursor::Arrow);
+	m_moving_cursor.loadFromSystem(sf::Cursor::SizeAll);
+
 	m_window.create(sf::VideoMode(1000, 1000), "Icon edit");
 	ImGui::SFML::Init(m_window);
 
@@ -53,7 +60,7 @@ void Main::start()
 		m_window.clear(sf::Color(16, 16, 16));
 		onUpdate();
 		onRenderWorkspace();
-		processGUIMainMenuBar();
+		processGUI();
 
 		m_window.display();
 	}
@@ -61,33 +68,99 @@ void Main::start()
 
 void Main::loadFile(const std::filesystem::path& path)
 {
-	/*
 	try
 	{
-	*/
 		m_ocif_image.loadFromFile(path);
-		m_ocif_image.rasterize(m_image, m_font);
-		m_texture.loadFromImage(m_image);
-		m_sprite.setTexture(m_texture, true /* CYKA */);
-
-		setScale(1.f);
-
-		auto window_size = m_window.getSize();
-		auto bounds = m_sprite.getGlobalBounds();
-		m_sprite.setPosition(window_size.x / 2 - bounds.width / 2, window_size.y / 2 - bounds.height / 2);
-	/*
+		rasterizeImage();
+		centerImage();
+		appendRecentFilesList(path);
 	}
 
 	catch (std::exception exc)
 	{
 		printf("%s\n", exc.what());
 	}
-	*/
+}
+
+void Main::newFile(unsigned width, unsigned height)
+{
+	m_ocif_image.resize(width, height);
+	m_ocif_image.clear({' ', 0xFFFFFF, 0x000000, 0.0});
+	rasterizeImage();
+	centerImage();
+}
+
+void Main::rasterizeImage()
+{
+	m_ocif_image.rasterize(m_image, m_font);
+	updateTexture();
+}
+
+void Main::updateTexture()
+{
+	m_texture.loadFromImage(m_image);
+	m_sprite.setTexture(m_texture, true /* CYKA */);
+}
+
+void Main::centerImage()
+{
+	setScale(1.f);
+
+	auto window_size = m_window.getSize();
+	auto bounds = m_sprite.getGlobalBounds();
+	m_sprite.setPosition(window_size.x / 2 - bounds.width / 2, window_size.y / 2 - bounds.height / 2);
 }
 
 //===========================================
 
-void Main::processEvent(sf::Event event)
+void Main::appendRecentFilesList(const std::filesystem::path& path)
+{
+	auto iter = std::find(m_recent_files.begin(), m_recent_files.end(), path);
+	if (iter == m_recent_files.end())
+	{
+		m_recent_files.push_front(path);
+		if (m_recent_files.size() > RecentFilesListLimit)
+			m_recent_files.pop_back();
+	}
+
+	else
+	{
+		// Move found path to top of the list
+		std::rotate(m_recent_files.begin(), iter, iter+1);
+	}
+
+	saveRecentFilesList();
+}
+
+void Main::loadRecentFilesList()
+{
+	std::ifstream stream(RecentFilesListLocation);
+	if (stream.good())
+	{
+		m_recent_files.clear();
+
+		std::string line;
+		while (std::getline(stream, line))
+			m_recent_files.push_back(line);
+	}
+}
+
+void Main::saveRecentFilesList()
+{
+	std::ofstream stream(RecentFilesListLocation);
+	if (!stream)
+	{
+		std::cerr << "Failed to save recent files list" << std::endl;
+		return;
+	}
+
+	for (const auto& path: m_recent_files)
+		stream << path.string() << std::endl;
+}
+
+//===========================================
+
+void Main::processEvent(sf::Event& event)
 {
 	ImGui::SFML::ProcessEvent(event);
 
@@ -99,36 +172,20 @@ void Main::processEvent(sf::Event event)
 
 		case sf::Event::KeyPressed:
 			if (!ImGui::GetIO().WantCaptureKeyboard)
-			{
 				if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
 					onKeyboardShortcut(event.key.code);
-			}
 
 			break;
 
 		case sf::Event::MouseButtonPressed:
 			if (!ImGui::GetIO().WantCaptureMouse)
-			{
-				switch (event.mouseButton.button)
-				{
-					case sf::Mouse::Left:
-						onDragStart();
-						break;
-				}
-			}
+				onMouseButtonPressed(event);
 
 			break;
 
 		case sf::Event::MouseButtonReleased:
 			if (!ImGui::GetIO().WantCaptureMouse)
-			{
-				switch (event.mouseButton.button)
-				{
-					case sf::Mouse::Left:
-						onDragStop();
-						break;
-				}
-			}
+				onMouseButtonReleased(event);
 
 			break;
 
@@ -159,21 +216,92 @@ void Main::onKeyboardShortcut(sf::Keyboard::Key key)
 	}
 }
 
+void Main::onMouseButtonPressed(sf::Event& event)
+{
+	switch (event.mouseButton.button)
+	{
+		case sf::Mouse::Left:
+			if (isMouseInsideImage())
+			{
+				if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
+					onPickColor();
+
+				else
+					onDrawStart();
+			}
+
+			break;
+
+		case sf::Mouse::Middle:
+			onDragStart();
+	}	
+}
+
+void Main::onMouseButtonReleased(sf::Event& event)
+{
+	switch (event.mouseButton.button)
+	{
+		case sf::Mouse::Middle:
+			onDragStop();
+			break;
+
+		case sf::Mouse::Left:
+			onDrawStop();
+			break;
+	}
+}
+
 void Main::onDragStart()
 {
 	m_dragging = true;
 	m_drag_mouse_position = sf::Mouse::getPosition(m_window);
 	m_drag_sprite_position = sf::Vector2i(m_sprite.getPosition());
+
+	m_window.setMouseCursor(m_moving_cursor);
 }
 
 void Main::onDragStop()
 {
 	m_dragging = false;
+
+	m_window.setMouseCursor(m_default_cursor);
 }
 
 void Main::onZoom(int direction)
 {
 	setScale(m_scale + .1f * direction);
+}
+
+void Main::onDrawStart()
+{
+	m_drawing = true;
+	onDraw();
+}
+
+void Main::onDrawStop()
+{
+	m_drawing = false;
+}
+
+void Main::onDraw()
+{
+	auto& current_pixel = getCurrentPixel();
+
+	bool dot = OCIF::BrailleCheckDot(
+		current_pixel.character,
+		m_current_braille_coords.x % 2,
+		m_current_braille_coords.y % 4
+	);
+
+	(dot? current_pixel.foreground: current_pixel.background) = OCIF::To24BitColor(OCIF::To8BitColor(m_current_color));
+
+	m_ocif_image.rasterizePixel(m_image, m_font, m_current_pixel_coords.x, m_current_pixel_coords.y);
+	updateTexture();
+}
+
+void Main::onPickColor()
+{
+	m_current_color = m_image.getPixel(m_current_image_coords.x, m_current_image_coords.y);
 }
 
 //===========================================
@@ -185,8 +313,38 @@ void Main::onRenderWorkspace()
 	if (m_show_border)
 		onRenderBorder();
 
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
-		onRenderPixelInfo();
+	if (isMouseInsideImage())
+	{
+		const auto& pixel = getCurrentPixel();
+		const auto& glyph = m_font[pixel.character];
+		auto scale = m_sprite.getScale();
+
+		static sf::RectangleShape rect;
+		rect.setOutlineThickness(1);
+
+		if (m_show_pixel_frame)
+		{
+			rect.setOutlineColor(sf::Color::White);
+			rect.setFillColor(sf::Color(255, 255, 255, 100));
+			rect.setPosition(pixelToWindowCoords(m_current_pixel_coords));
+			rect.setSize(sf::Vector2f(glyph.getWidth() * scale.x, glyph.getHeight() * scale.y));
+
+			m_window.draw(rect);
+		}
+
+		if (m_show_braille_frame && !sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
+		{
+			auto color = m_current_color;
+			color.a = 100;
+
+			rect.setOutlineColor(m_current_color);
+			rect.setFillColor(color);
+			rect.setPosition(brailleToWindowCoords(m_current_braille_coords));
+			rect.setSize(sf::Vector2f(4 * scale.x, 4 * scale.y));
+
+			m_window.draw(rect);
+		}
+	}
 }
 
 void Main::onRenderBorder()
@@ -203,61 +361,33 @@ void Main::onRenderBorder()
 	m_window.draw(rect);
 }
 
-void Main::onRenderPixelInfo()
-{
-	sf::Vector2f mouse_coords(sf::Mouse::getPosition(m_window));
-	auto image_coords = windowToImageCoords(mouse_coords);
-
-	if (
-		   0 <= image_coords.x && image_coords.x < m_ocif_image.getWidth () 
-		&& 0 <= image_coords.y && image_coords.y < m_ocif_image.getHeight()
-	)
-	{
-		static sf::RectangleShape rect;
-		rect.setOutlineColor(sf::Color::White);
-		rect.setOutlineThickness(1);
-		rect.setFillColor(sf::Color(255, 255, 255, 100));
-		rect.setPosition(imageToWindowCoords(image_coords));
-
-		const auto& pixel = m_ocif_image.get(image_coords.x, image_coords.y);
-		const auto& glyph = m_font[pixel.character];
-
-		auto scale = m_sprite.getScale();
-		rect.setSize(sf::Vector2f(glyph.getWidth() * scale.x, glyph.getHeight() * scale.y));
-
-		m_window.draw(rect);
-
-		ImGui::SetNextWindowPos(ImVec2(mouse_coords.x + 10, mouse_coords.y + 10));
-		if (ImGui::Begin("Pixel info", nullptr, ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoResize))
-		{
-			ImGui::Text("Position: %d, %d", image_coords.x, image_coords.y);
-
-			// Display only ASCII characters for now, too lazy to make it work with unicode
-			if (pixel.character <= 128)
-				ImGui::Text("Character: U+%04X (%c)", pixel.character, pixel.character);
-
-			else
-				ImGui::Text("Character: U+%04X", pixel.character);
-
-			ImGui::Text("Background: 0x%06X", pixel.background);
-			ImGui::Text("Foreground: 0x%06X", pixel.foreground);
-			ImGui::Text("Alpha: %lf", pixel.alpha);
-
-			ImGui::End();
-		}
-	}
-}
-
 void Main::onUpdate()
 {
+	auto last_braille_coords = m_current_braille_coords;
+
+	sf::Vector2f mouse(sf::Mouse::getPosition(m_window));
+	m_current_pixel_coords   = windowToPixelCoords  (mouse);
+	m_current_braille_coords = windowToBrailleCoords(mouse);
+	m_current_image_coords   = windowToImageCoords  (mouse);
+
+	if (m_drawing && isMouseInsideImage() && last_braille_coords != m_current_braille_coords)
+		onDraw();
+
 	if (m_dragging)
-	{
-		auto delta = sf::Mouse::getPosition(m_window) - m_drag_mouse_position;
-		m_sprite.setPosition(sf::Vector2f(m_drag_sprite_position + delta));
-	}
+		m_sprite.setPosition(sf::Vector2f(m_drag_sprite_position - m_drag_mouse_position) + mouse);
 }
 
 //===========================================
+
+void Main::processGUI()
+{
+	processGUIMainMenuBar();
+
+	if (m_show_tools_window)
+		processGUIToolsWindow();
+
+	ImGui::SFML::Render(m_window);
+}
 
 void Main::processGUIMainMenuBar()
 {
@@ -277,27 +407,58 @@ void Main::processGUIMainMenuBar()
 
 		ImGui::EndMainMenuBar();
 	}
-
-	ImGui::SFML::Render(m_window);
 }
 
 void Main::processGUIFileMenu()
 {
-	if (ImGui::MenuItem("Exit", "^W"))
-		onExit();
+	if (ImGui::MenuItem("New", "^N"))
+		onFileNew();
 
 	if (ImGui::MenuItem("Open", "^O"))
 		onFileOpen();
+
+	if (ImGui::BeginMenu("Open recent", !m_recent_files.empty()))
+	{
+		for (const auto& path: m_recent_files)
+			if (ImGui::MenuItem(path.filename().string().c_str()))
+				loadFile(path);
+
+		ImGui::EndMenu();
+	}
+
+	if (ImGui::MenuItem("Exit", "^W"))
+		onExit();
 }
 
 void Main::processGUIViewMenu()
 {
-	ImGui::MenuItem("Image border", nullptr, &m_show_border);
+	ImGui::MenuItem("Tools window",   nullptr, &m_show_tools_window );
+	ImGui::MenuItem("Image border",   nullptr, &m_show_border       );
+	ImGui::MenuItem("Pixel border",   nullptr, &m_show_pixel_frame  );
+	ImGui::MenuItem("Braille border", nullptr, &m_show_braille_frame);
+}
+
+void Main::processGUIToolsWindow()
+{
+	static float color[3] = {};
+
+	if (ImGui::Begin("Tools", &m_show_tools_window))
+	{
+		if (ImGui::ColorEdit3("Color", OCIF::ToFloat3Color(m_current_color, color)))
+			m_current_color = OCIF::ToSFColor(color);
+	}
+
+	ImGui::End();
 }
 
 void Main::onExit()
 {
 	m_window.close();
+}
+
+void Main::onFileNew()
+{
+	newFile(8, 4);
 }
 
 void Main::onFileOpen()
@@ -314,7 +475,7 @@ void Main::onFileOpen()
 	ofn.lpstrFileTitle = nullptr;
 	ofn.nMaxFileTitle = 0;
 	ofn.lpstrInitialDir = nullptr;
-	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_FILEMUSTEXIST | OFN_NOCHANGEDIR;
 
 	if (GetOpenFileNameW(&ofn))
 	{
@@ -344,7 +505,7 @@ void Main::setScale(float scale)
 	m_sprite.setScale(scale_factor, scale_factor);
 }
 
-sf::Vector2i Main::windowToImageCoords(const sf::Vector2f& coords)
+sf::Vector2i Main::windowToPixelCoords(const sf::Vector2f& coords)
 {
 	auto sprite_bounds = m_sprite.getGlobalBounds();
 	return sf::Vector2i(
@@ -353,13 +514,64 @@ sf::Vector2i Main::windowToImageCoords(const sf::Vector2f& coords)
 	);
 }
 
-sf::Vector2f Main::imageToWindowCoords(const sf::Vector2i& coords)
+sf::Vector2f Main::pixelToWindowCoords(const sf::Vector2i& coords)
 {
 	auto sprite_bounds = m_sprite.getGlobalBounds();
 	return sf::Vector2f(
 		sprite_bounds.left + (static_cast<float>(coords.x) / m_ocif_image.getWidth ()) * sprite_bounds.width,
 		sprite_bounds.top  + (static_cast<float>(coords.y) / m_ocif_image.getHeight()) * sprite_bounds.height
 	);
+}
+
+sf::Vector2i Main::windowToBrailleCoords(const sf::Vector2f& coords)
+{
+	auto sprite_bounds = m_sprite.getGlobalBounds();
+	return sf::Vector2i(
+		std::floor(((coords.x - sprite_bounds.left) / sprite_bounds.width ) * (m_ocif_image.getWidth ()) * 2),
+		std::floor(((coords.y - sprite_bounds.top ) / sprite_bounds.height) * (m_ocif_image.getHeight()) * 4)
+	);
+}
+
+sf::Vector2f Main::brailleToWindowCoords(const sf::Vector2i& coords)
+{
+	auto sprite_bounds = m_sprite.getGlobalBounds();
+	return sf::Vector2f(
+		sprite_bounds.left + (static_cast<float>(coords.x) / (m_ocif_image.getWidth () * 2)) * sprite_bounds.width,
+		sprite_bounds.top  + (static_cast<float>(coords.y) / (m_ocif_image.getHeight() * 4)) * sprite_bounds.height
+	);
+}
+
+sf::Vector2i Main::windowToImageCoords(const sf::Vector2f& coords)
+{
+	auto sprite_bounds = m_sprite.getGlobalBounds();
+	auto image_size = m_image.getSize();
+
+	return sf::Vector2i(
+		((coords.x - sprite_bounds.left) / sprite_bounds.width ) * image_size.x,
+		((coords.y - sprite_bounds.top ) / sprite_bounds.height) * image_size.y
+	);
+}
+
+sf::Vector2f Main::imageToWindowCoords(const sf::Vector2i& coords)
+{
+	auto sprite_bounds = m_sprite.getGlobalBounds();
+	auto image_size = m_image.getSize();
+
+	return sf::Vector2f(
+		sprite_bounds.left + (static_cast<float>(coords.x) / image_size.x) * sprite_bounds.width,
+		sprite_bounds.top  + (static_cast<float>(coords.y) / image_size.y) * sprite_bounds.height
+	);
+}
+
+bool Main::isMouseInsideImage()
+{
+	return    m_current_pixel_coords.x >= 0 && m_current_pixel_coords.x < m_ocif_image.getWidth ()
+		   && m_current_pixel_coords.y >= 0 && m_current_pixel_coords.y < m_ocif_image.getHeight();
+}
+
+OCIF::Pixel& Main::getCurrentPixel()
+{
+	return m_ocif_image.get(m_current_pixel_coords.x, m_current_pixel_coords.y);
 }
 
 //===========================================

@@ -34,6 +34,11 @@ void Image::resize(size_t new_width, size_t new_height)
 	m_height = new_height;
 }
 
+void Image::clear(const Pixel& pixel)
+{
+	std::fill(m_data.begin(), m_data.end(), pixel);
+}
+
 void Image::set(size_t x, size_t y, const Pixel& pixel)
 {
 	get(x, y) = pixel;
@@ -139,19 +144,20 @@ void Image::rasterize(sf::Image& image, HexFont& font) const
 {
 	image.create(m_width * HexFont::Glyph::DefaultWidth, m_height * HexFont::Glyph::DefaultHeight);
 	for (size_t x = 0; x < m_width; x++)
-	{
 		for (size_t y = 0; y < m_height; y++)
-		{
-			const auto& pixel = get(x, y);
-			font[pixel.character].rasterize(
-				image,
-				x * HexFont::Glyph::DefaultWidth,
-				y * HexFont::Glyph::DefaultHeight,
-				ToSFColor(pixel.background, pixel.alpha),
-				ToSFColor(pixel.foreground)
-			);
-		}
-	}
+			rasterizePixel(image, font, x, y);
+}
+
+void Image::rasterizePixel(sf::Image& image, HexFont& font, size_t x, size_t y) const
+{
+	const auto& pixel = get(x, y);
+	font[pixel.character].rasterize(
+		image,
+		x * HexFont::Glyph::DefaultWidth,
+		y * HexFont::Glyph::DefaultHeight,
+		ToSFColor(pixel.background, pixel.alpha),
+		ToSFColor(pixel.foreground)
+	);	
 }
 
 //===========================================

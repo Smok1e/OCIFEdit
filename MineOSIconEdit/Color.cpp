@@ -16,6 +16,11 @@ Color To24BitColor(uint8_t index)
 	return Palette[index];
 }
 
+Color To24BitColor(sf::Color color)
+{
+	return static_cast<Color>(color.r) << 16 | static_cast<Color>(color.g) << 8 | static_cast<Color>(color.b);
+}
+
 sf::Color ToSFColor(Color color, double alpha /*= 0.0*/)
 {
 	return sf::Color(
@@ -24,6 +29,46 @@ sf::Color ToSFColor(Color color, double alpha /*= 0.0*/)
 		(color      ) & 0xFF,
 		static_cast<uint8_t>((1.0 - std::clamp(alpha, 0.0, 1.0)) * 0xFF)
 	);
+}
+
+sf::Color ToSFColor(float* arr)
+{
+	return sf::Color(
+		std::clamp(arr[0], 0.f, 1.f) * 0xFF,
+		std::clamp(arr[1], 0.f, 1.f) * 0xFF,
+		std::clamp(arr[2], 0.f, 1.f) * 0xFF
+	);
+}
+
+float* ToFloat3Color(sf::Color color, float* arr)
+{
+	arr[0] = static_cast<float>(color.r) / 0xFF;
+	arr[1] = static_cast<float>(color.g) / 0xFF;
+	arr[2] = static_cast<float>(color.b) / 0xFF;
+	return arr;
+}
+
+uint8_t To8BitColor(sf::Color color)
+{
+	size_t closest = 0;
+	double closest_diff = ColorDiffAvg(ToSFColor(Palette[closest]), color);
+
+	for (size_t i = 1; i < sizeof(Palette) / sizeof(Color); i++)
+	{
+		double diff = ColorDiffAvg(ToSFColor(Palette[i]), color);
+		if (diff < closest_diff)
+		{
+			closest = i;
+			closest_diff = diff;
+		}
+	}
+
+	return closest;
+}
+
+double ColorDiffAvg(sf::Color a, sf::Color b)
+{
+	return sqrt(std::pow(a.r-b.r, 2) + std::pow(a.g-b.g, 2) + std::pow(a.b-b.b, 2));
 }
 
 //===========================================

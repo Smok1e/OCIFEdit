@@ -9,10 +9,13 @@ namespace OCIF
 
 //===========================================
 
-bool IsBrailleCharacter(uint32_t ch);
-bool BrailleCheckDot(uint32_t ch, size_t x, size_t y);
-void RasterizeBraille(sf::Image& image, unsigned x, unsigned y, uint32_t ch, sf::Color background, sf::Color foreground);
-
+// Converts some characters such as space and lower half blocks to 
+// same braille alternatives
+uint32_t NormalizeBrailleCharacter(uint32_t ch);
+unsigned BrailleBit(size_t x, size_t y);
+bool     BrailleCheckDot(uint32_t ch, size_t x, size_t y);
+uint32_t BrailleSetDot(uint32_t ch, size_t x, size_t y, bool dot);
+	
 //===========================================
 
 } // namespace OCIF
