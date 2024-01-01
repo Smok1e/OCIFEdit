@@ -56,6 +56,9 @@
     <ClInclude Include="HexFont.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="IconsFontAwesome6.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <None Include="font.hex">

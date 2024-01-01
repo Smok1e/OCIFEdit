@@ -1,5 +1,6 @@
 #include "Main.hpp"
 #include "Braille.hpp"
+#include "IconsFontAwesome6.hpp"
 
 #include <Windows.h>
 
@@ -40,6 +41,22 @@ void Main::init()
 
 	m_window.create(sf::VideoMode(1000, 1000), "Icon edit");
 	ImGui::SFML::Init(m_window);
+
+	auto& io = ImGui::GetIO();
+	io.Fonts->Clear();
+	io.Fonts->AddFontDefault();
+	float base_font_size = 13.f;
+	float icon_font_size = base_font_size * 2.f / 3.f;
+
+	// Merge in icons from fontawesome
+	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+	ImFontConfig icons_config = {};
+	icons_config.MergeMode = true;
+	icons_config.PixelSnapH = true;
+	icons_config.GlyphMinAdvanceX = icon_font_size;
+	io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, icon_font_size, &icons_config, icons_ranges);
+	io.Fonts->Build();
+	ImGui::SFML::UpdateFontTexture();
 
 	m_initialized = true;
 }
@@ -411,13 +428,13 @@ void Main::processGUIMainMenuBar()
 
 void Main::processGUIFileMenu()
 {
-	if (ImGui::MenuItem("New", "^N"))
+	if (ImGui::MenuItem(ICON_FA_FILE " New", "^N"))
 		onFileNew();
 
-	if (ImGui::MenuItem("Open", "^O"))
+	if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open", "^O"))
 		onFileOpen();
 
-	if (ImGui::BeginMenu("Open recent", !m_recent_files.empty()))
+	if (ImGui::BeginMenu(ICON_FA_CUBE " Open recent", !m_recent_files.empty()))
 	{
 		for (const auto& path: m_recent_files)
 			if (ImGui::MenuItem(path.filename().string().c_str()))
@@ -426,7 +443,7 @@ void Main::processGUIFileMenu()
 		ImGui::EndMenu();
 	}
 
-	if (ImGui::MenuItem("Exit", "^W"))
+	if (ImGui::MenuItem(ICON_FA_XMARK " Exit", "^W"))
 		onExit();
 }
 

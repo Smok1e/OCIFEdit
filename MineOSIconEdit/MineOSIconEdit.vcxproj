@@ -147,6 +147,7 @@
     <ClInclude Include="Braille.hpp" />
     <ClInclude Include="Color.hpp" />
     <ClInclude Include="HexFont.hpp" />
+    <ClInclude Include="IconsFontAwesome6.hpp" />
     <ClInclude Include="IO.hpp" />
     <ClInclude Include="Image.hpp" />
     <ClInclude Include="Main.hpp" />
