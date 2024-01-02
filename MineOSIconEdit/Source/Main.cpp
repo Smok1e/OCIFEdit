@@ -23,13 +23,17 @@
 
 // Constants
 constexpr size_t                  BUFFSIZE                = 1024;
+const std::filesystem::path       RESOURCES_BASE_DIR      = "Resources";              // Resources directory path
+const std::filesystem::path       GUI_FONT_PATH           = "CascadiaCode.ttf";       // Unicode font used to display text in GUI
+constexpr float                   GUI_FONT_SIZE           = 18.f;                     // GUI text size
 const std::filesystem::path       OC_FONT_PATH            = "font.hex";               // Opencomputers font in their own hex format
 const std::filesystem::path       RECENT_FILES_LIST_PATH  = "recent.txt";             // Cached list of recently open files
-const size_t                      RECENT_FILES_LIST_LIMIT = 10;                       // Limit of recently open files
+constexpr size_t                  RECENT_FILES_LIST_LIMIT = 10;                       // Limit of recently open files
 const sf::Color                   BACKGROUND_COLOR        = sf::Color(24, 24, 24);    // Window background color
 sf::Vector2u                      WINDOW_INITIAL_SIZE     = sf::Vector2u(1000, 1000); // Render window size when it is initially opened
 const char*                       WINDOW_TITLE            = "OCIF edit";              // Render window title
 
+// Context variables
 OCIF::HexFont                     OpencomputersFont;
 std::deque<std::filesystem::path> RecentFilesList;
 sf::RenderWindow                  RenderWindow;
@@ -107,7 +111,7 @@ bool Initialize()
 	SetConsoleOutputCP(CP_UTF8);
 
 	// Loading opencomputers font from .hex file
-	OpencomputersFont.loadFromFile(OC_FONT_PATH);
+	OpencomputersFont.loadFromFile(RESOURCES_BASE_DIR/OC_FONT_PATH);
 
 	// Loading cached recent files list
 	LoadRecentFilesList();
@@ -123,21 +127,21 @@ bool Initialize()
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);
 	
-	// Loading icons font
+	// Loading fonts
 	auto& io = ImGui::GetIO();
 	io.Fonts->Clear();
-	io.Fonts->AddFontDefault();
 
-	float base_font_size = 18.f;
-	float icon_font_size = base_font_size * (2.f / 3.f);
+	// Loading font for displaying UTF-8 encoded text
+	static const ImWchar utf8_ranges[] = { 0x20, 0xFFFF, 0 };
+	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/GUI_FONT_PATH).string().c_str(), GUI_FONT_SIZE, nullptr, utf8_ranges);
 
-	// Merge icons from fontawesome into default font
+	// Loading FontAwesome and merging icons glyphs to previous font
 	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
 	ImFontConfig icons_config = {};
 	icons_config.MergeMode = true;
 	icons_config.PixelSnapH = true;
-	icons_config.GlyphMinAdvanceX = icon_font_size;
-	io.Fonts->AddFontFromFileTTF(FONT_ICON_FILE_NAME_FAS, icon_font_size, &icons_config, icons_ranges);
+	icons_config.GlyphMinAdvanceX = GUI_FONT_SIZE;
+	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/FONT_ICON_FILE_NAME_FAS).string().c_str(), GUI_FONT_SIZE, &icons_config, icons_ranges);
 	io.Fonts->Build();
 
 	ImGui::SFML::UpdateFontTexture();
