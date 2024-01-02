@@ -1,7 +1,13 @@
 #include <string>
 #include <stdexcept>
+#include <cuchar>
 
 #include "OCIF/IO.hpp"
+
+//===========================================
+
+namespace OCIF
+{
 
 //===========================================
 
@@ -41,5 +47,17 @@ uint32_t ReadUnicodeCharacter(std::istream& stream)
 
 	return ch;
 }
+
+void WriteUnicodeCharacter(std::ostream& stream, uint32_t codepoint)
+{
+	std::mbstate_t state;
+
+	char buffer[MB_LEN_MAX];
+	stream.write(buffer, std::c32rtomb(buffer, codepoint, &state));
+}
+
+//===========================================
+
+} // namespace OCIF
 
 //===========================================

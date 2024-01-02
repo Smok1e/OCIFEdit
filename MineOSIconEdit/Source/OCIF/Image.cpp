@@ -1,4 +1,5 @@
-#include <fstream>
+﻿#include <fstream>
+#include <map>
 
 #include "OCIF/IO.hpp"
 #include "OCIF/Image.hpp"
@@ -136,6 +137,105 @@ void Image::loadFromFile(const std::filesystem::path& path)
 	stream.open(path, std::ios::binary);
 
 	loadFromStream(stream);
+}
+
+//===========================================
+
+void Image::saveToStream(std::ostream& stream) const
+{
+	//       Alpha            Character          Background        Foreground        Y                     X
+	std::map<double, std::map<uint32_t, std::map<uint8_t, std::map<uint8_t, std::map<unsigned, std::vector<unsigned>>>>>> grouped_image;
+
+	for (size_t i = 0; i < m_data.size(); i++)
+	{
+		auto& pixel = m_data[i];
+
+		if (!grouped_image.contains(pixel.alpha))
+			grouped_image.insert({pixel.alpha, {}});
+
+		if (!grouped_image[pixel.alpha].contains(pixel.character))
+			grouped_image[pixel.alpha].insert({pixel.character, {}});
+
+		uint8_t background = To8BitColor(pixel.background);
+		if (!grouped_image[pixel.alpha][pixel.character].contains(background))
+			grouped_image[pixel.alpha][pixel.character].insert({background, {}});
+
+		uint8_t foreground = To8BitColor(pixel.foreground);
+		if (!grouped_image[pixel.alpha][pixel.character][background].contains(foreground))
+			grouped_image[pixel.alpha][pixel.character][background].insert({foreground, {}});
+
+		unsigned y = i / m_width;
+		if (!grouped_image[pixel.alpha][pixel.character][background][foreground].contains(y))
+			grouped_image[pixel.alpha][pixel.character][background][foreground].insert({y, {}});
+
+		unsigned x = i % m_width;
+		grouped_image[pixel.alpha][pixel.character][background][foreground][y].push_back(x);
+	}
+
+	// Signature
+	stream << "OCIF";
+
+	// Encoding method
+	WriteBytes<uint8_t>(stream, 8);
+
+	// Width/height
+	WriteBytes<uint8_t>(stream, m_width  - 1);
+	WriteBytes<uint8_t>(stream, m_height - 1);
+
+	// Alpha count
+	WriteBytes<uint8_t>(stream, grouped_image.size() - 1);
+	for (const auto& [alpha, characters]: grouped_image)
+	{
+		// Current alpha
+		WriteBytes<uint8_t>(stream, std::floor(alpha * 0xFF));
+
+		// 2 bytes for character count
+		WriteBytes<uint16_t>(stream, characters.size() - 1);
+		for (const auto& [character, backgrounds]: characters)
+		{
+			// Current character encoded in UTF-8
+			WriteUnicodeCharacter(stream, character);
+
+			// Background count
+			WriteBytes<uint8_t>(stream, backgrounds.size() - 1);
+			for (const auto& [background, foregrounds]: backgrounds)
+			{
+				// Current background
+				WriteBytes<uint8_t>(stream, background);
+
+				// Foreground count
+				WriteBytes<uint8_t>(stream, foregrounds.size() - 1);
+				for (const auto& [foreground, y_map]: foregrounds)
+				{
+					// Current foreground
+					WriteBytes<uint8_t>(stream, foreground);
+
+					// Y count
+					WriteBytes<uint8_t>(stream, y_map.size() - 1);
+					for (const auto& [y, x_array]: y_map)
+					{
+						// Current Y
+						WriteBytes<uint8_t>(stream, y);
+
+						// X count
+						WriteBytes<uint8_t>(stream, x_array.size() - 1);
+						for (const auto& x: x_array)
+							// Current X
+							WriteBytes<uint8_t>(stream, x);
+					}
+				}
+			}
+		}
+	}
+}
+
+void Image::saveToFile(const std::filesystem::path& path) const
+{
+	std::ofstream stream;
+	stream.exceptions(stream.exceptions() | std::ios::failbit);
+	stream.open(path, std::ios::binary);
+
+	saveToStream(stream);
 }
 
 //===========================================

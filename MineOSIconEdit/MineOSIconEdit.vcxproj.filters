@@ -21,9 +21,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="font.hex">
-      <Filter>Resource Files</Filter>
-    </None>
+    <None Include="Resources\font.hex" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -44,6 +42,12 @@
     <ClCompile Include="Source\OCIF\IO.cpp">
       <Filter>Source Files\OCIF</Filter>
     </ClCompile>
+    <ClCompile Include="Source\Tools\Brush.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\OCIF\Braille.hpp">
@@ -61,8 +65,18 @@
     <ClInclude Include="Include\OCIF\IO.hpp">
       <Filter>Header Files\OCIF</Filter>
     </ClInclude>
-    <ClInclude Include="Include\IconsFontAwesome6.hpp">
+    <ClInclude Include="Include\IconsMaterialDesign.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="Include\Tools\Brush.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Tools\Tool.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Resources\CascadiaCode.ttf" />
+    <Font Include="Resources\fa-solid-900.ttf" />
   </ItemGroup>
 </Project>

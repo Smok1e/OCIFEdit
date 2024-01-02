@@ -47,6 +47,9 @@ public:
 	void loadFromStream(std::istream& stream);
 	void loadFromFile(const std::filesystem::path& path);
 
+	void saveToStream(std::ostream& stream) const;
+	void saveToFile(const std::filesystem::path& path) const;
+
 	void rasterize(sf::Image& image, HexFont& font) const;
 	void rasterizePixel(sf::Image& image, HexFont& font, size_t x, size_t y) const;
 

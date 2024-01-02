@@ -2,6 +2,7 @@
 #define NOMINMAX
 
 #include <deque>
+#include <vector>
 #include <filesystem>
 #include <fstream>
 #include <iostream>
@@ -15,9 +16,12 @@
 #include <imgui.h>
 #include <imgui-SFML.h>
 
-#include "IconsFontAwesome6.hpp"
+#include "IconsMaterialDesign.hpp"
+
 #include "OCIF/HexFont.hpp"
 #include "OCIF/Image.hpp"
+
+#include "Tools/Brush.hpp"
 
 //===========================================
 
@@ -50,11 +54,22 @@ sf::Sprite                        CurrentImageSprite;
 std::filesystem::path             CurrentImagePath;
 float                             CurrentImageScale = 1.f;
 
-bool                              ShowImageBorder = false;
+bool                              ShowImageBorder        = false;
+bool                              ShowImGuiDemoWindow    = false;
+bool                              ShowCurrentPixelBorder = false;
+bool                              ShowCurrentPixelFrame  = false;
 
 bool                              Dragging = false;
 sf::Vector2i                      DragStartMousePosition;
 sf::Vector2i                      DragStartSpritePosition;
+
+// Tools
+bool               ShowToolsWindow = true;
+std::vector<Tool*> Tools;
+Tool*              CurrentTool = nullptr;
+bool               Drawing = false;
+sf::Mouse::Button  DrawingButton;
+sf::Vector2i       CurrentPixelCoords;
 
 // Popups state
 bool                  NewFilePopupOpened     = false;
@@ -68,12 +83,17 @@ std::filesystem::path ExportPath             = "";
 
 bool Initialize();
 void StartLoop();
+void Cleanup();
+
 void Update();
 void NewFile(int width, int height, OCIF::Color color);
 void LoadFile(const std::filesystem::path& path);
+void SaveFile(const std::filesystem::path& path);
 void ExportFile(const std::filesystem::path& path, float scale);
 void MaximizeWindow();
 void ShowMessageBox(std::string_view title, std::string_view message);
+
+bool IsMouseInsideImage();
 
 void UpdateTexture();
 void ResetImage();
@@ -90,7 +110,11 @@ void OnKeyboardShortcut(sf::Keyboard::Key key);
 void OnExit();
 void OnFileNew();
 void OnFileOpen();
+void OnFileSave();
 void OnFileExport();
+void OnDrawStart(sf::Mouse::Button button);
+void OnDrawStop();
+void OnDraw(sf::Mouse::Button button);
 
 void RenderWorkspace();
 
@@ -100,15 +124,22 @@ void ProcessGUIMainMenuBar();
 void ProcessGUIFileMenu();
 void ProcessGUIFileOpenRecentMenu();
 void ProcessGUIViewMenu();
+void ProcessGUIDebugMenu();
+
 void ProcessGUIPopups();
 void ProcessGUIFileNewPopup();
 void ProcessGUIMessageBoxPopup();
 void ProcessGUIExportPopup();
 
-void AppendRecentFilesList(const std::filesystem::path& path);
+void ProcessGUIToolsWindow();
+
+void AddToRecentFilesList(const std::filesystem::path& path);
 void RemoveFromRecentFilesList(const std::filesystem::path& path);
 bool LoadRecentFilesList();
 bool SaveRecentFilesList();
+
+sf::Vector2i WindowToPixelCoords(const sf::Vector2i& mouse);
+sf::Vector2i PixelToWindowCoords(const sf::Vector2i& pixel);
 
 //===========================================
 
@@ -118,6 +149,7 @@ int main()
 		return 0;
 
 	StartLoop();
+	Cleanup();
 }
 
 //===========================================
@@ -138,11 +170,13 @@ bool Initialize()
 
 	// Initializing window
 	RenderWindow.create(sf::VideoMode(WINDOW_INITIAL_SIZE.x, WINDOW_INITIAL_SIZE.y), WINDOW_TITLE);
-	MaximizeWindow();
+	RenderWindow.setVerticalSyncEnabled(true);
 
 	sf::Image icon;
 	if (icon.loadFromFile((RESOURCES_BASE_DIR/WINDOW_ICON_PATH).string()))
 		RenderWindow.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+
+	MaximizeWindow();
 
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);
@@ -155,13 +189,14 @@ bool Initialize()
 	static const ImWchar utf8_ranges[] = { 0x20, 0xFFFF, 0 };
 	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/GUI_FONT_PATH).string().c_str(), GUI_FONT_SIZE, nullptr, utf8_ranges);
 
-	// Loading FontAwesome and merging icons glyphs to previous font
-	static const ImWchar icons_ranges[] = { ICON_MIN_FA, ICON_MAX_16_FA, 0 };
+	// Loading MaterialDesign and merging icons glyphs to previous font
+	static const ImWchar icons_ranges[] = { ICON_MIN_MD, ICON_MAX_16_MD, 0 };
 	ImFontConfig icons_config = {};
 	icons_config.MergeMode = true;
 	icons_config.PixelSnapH = true;
+	icons_config.GlyphOffset.y = 5;
 	icons_config.GlyphMinAdvanceX = GUI_FONT_SIZE;
-	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/FONT_ICON_FILE_NAME_FAS).string().c_str(), GUI_FONT_SIZE, &icons_config, icons_ranges);
+	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/FONT_ICON_FILE_NAME_MD).string().c_str(), GUI_FONT_SIZE * 1.5f, &icons_config, icons_ranges);
 	io.Fonts->Build();
 
 	ImGui::SFML::UpdateFontTexture();
@@ -172,10 +207,12 @@ bool Initialize()
 	style.WindowRounding = 5.f;
 	style.PopupRounding  = 5.f;
 
+	// Initializing tools
+	Tools.push_back(new BrushTool);
+	CurrentTool = Tools[0];
+
 	return true;
 }
-
-//===========================================
 
 void StartLoop()
 {
@@ -196,6 +233,14 @@ void StartLoop()
 	}
 }
 
+void Cleanup()
+{
+	for (auto& instance: Tools)
+		delete instance;
+}
+
+//===========================================
+
 void Update()
 {
 	ImGui::SFML::Update(RenderWindow, DeltaClock.restart());
@@ -206,6 +251,12 @@ void Update()
 		auto delta = sf::Mouse::getPosition(RenderWindow) - DragStartMousePosition;
 		CurrentImageSprite.setPosition(sf::Vector2f(DragStartSpritePosition + delta));
 	}
+
+	auto last_pixel_coords = CurrentPixelCoords;
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+	CurrentPixelCoords = WindowToPixelCoords(sf::Mouse::getPosition(RenderWindow));
+	if (Drawing && last_pixel_coords != CurrentPixelCoords && IsMouseInsideImage())
+		OnDraw(DrawingButton);
 }
 
 void NewFile(int width, int height, OCIF::Color color)
@@ -229,6 +280,7 @@ void NewFile(int width, int height, OCIF::Color color)
 	ResetImage();
 
 	CurrentImagePath = "Untitled";
+	ImageLoaded = true;
 }
 
 void LoadFile(const std::filesystem::path& path)
@@ -240,7 +292,7 @@ void LoadFile(const std::filesystem::path& path)
 		UpdateTexture();
 		ResetImage();
 
-		AppendRecentFilesList(path);
+		AddToRecentFilesList(path);
 
 		ImageLoaded = true;
 		CurrentImagePath = path;
@@ -253,6 +305,23 @@ void LoadFile(const std::filesystem::path& path)
 
 		ShowMessageBox("Unable to load file", stream.str());
 		RemoveFromRecentFilesList(path);
+	}
+}
+
+void SaveFile(const std::filesystem::path& path)
+{
+	try
+	{
+		CurrentImage.saveToFile(path);
+		AddToRecentFilesList(path);
+	}
+
+	catch (std::exception exc)
+	{
+		std::stringstream stream;
+		stream << "Unable to save file '" << reinterpret_cast<const char*>(path.filename().u8string().c_str()) << "': " << exc.what() << std::endl;
+
+		ShowMessageBox("Unable to save file", stream.str());
 	}
 }
 
@@ -289,6 +358,13 @@ void ShowMessageBox(std::string_view title, std::string_view message)
 
 //===========================================
 
+bool IsMouseInsideImage()
+{
+	return CurrentPixelCoords.x >= 0 && CurrentPixelCoords.x < CurrentImage.getWidth() && CurrentPixelCoords.y >= 0 && CurrentPixelCoords.y < CurrentImage.getHeight();
+}
+
+//===========================================
+
 void UpdateTexture()
 {
 	CurrentRasterizedTexture.loadFromImage(CurrentRasterizedImage);
@@ -297,6 +373,8 @@ void UpdateTexture()
 
 void ResetImage()
 {
+	SetImageScale(1.f);
+
 	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
 	auto window_size   = RenderWindow.getSize();
 
@@ -304,8 +382,6 @@ void ResetImage()
 		window_size.x / 2 - sprite_bounds.width  / 2, 
 		window_size.y / 2 - sprite_bounds.height / 2
 	);
-
-	SetImageScale(1.f);
 }
 
 void SetImageScale(float scale)
@@ -362,6 +438,13 @@ void OnMouseButtonPressed(sf::Mouse::Button button)
 		case sf::Mouse::Middle:
 			OnDragStart();
 			break;
+
+		case sf::Mouse::Right:
+		case sf::Mouse::Left:
+			if (IsMouseInsideImage())
+				OnDrawStart(button);
+
+			break;
 	}
 }
 
@@ -371,6 +454,10 @@ void OnMouseButtonReleased(sf::Mouse::Button button)
 	{
 		case sf::Mouse::Middle:
 			OnDragStop();
+			break;
+
+		case sf::Mouse::Left:
+			OnDrawStop();
 			break;
 	}
 }
@@ -426,6 +513,28 @@ void OnFileOpen()
 		LoadFile(ofn.lpstrFile);
 }
 
+void OnFileSave()
+{
+	static wchar_t buffer[BUFFSIZE] = L"";
+	CurrentImagePath.stem().wstring().copy(buffer, BUFFSIZE);
+
+	OPENFILENAMEW ofn = {};
+	ofn.lStructSize = sizeof(ofn);
+	ofn.hwndOwner = RenderWindow.getSystemHandle();
+	ofn.lpstrFile = buffer;
+	ofn.nMaxFile = BUFFSIZE;
+	ofn.lpstrFileTitle = nullptr;
+	ofn.lpstrDefExt = L"pic";
+	ofn.lpstrFilter = L"All\0*.*\0" "OCIF (.pic)\0*.pic\0";
+	ofn.nFilterIndex = 1;
+	ofn.nMaxFileTitle = 0;
+	ofn.lpstrInitialDir = nullptr;
+	ofn.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
+
+	if (GetSaveFileNameW(&ofn))
+		SaveFile(ofn.lpstrFile);
+}
+
 void OnFileExport()
 {
 	static wchar_t buffer[BUFFSIZE] = L"";
@@ -451,6 +560,24 @@ void OnFileExport()
 	}
 }
 
+void OnDrawStart(sf::Mouse::Button button)
+{
+	Drawing = true;
+	DrawingButton = button;
+	OnDraw(button);
+}
+
+void OnDrawStop()
+{
+	Drawing = false;
+}
+
+void OnDraw(sf::Mouse::Button button)
+{
+	if (CurrentTool->onDraw(button, CurrentImage, OpencomputersFont, CurrentRasterizedImage, CurrentPixelCoords))
+		UpdateTexture();
+}
+
 void OnKeyPressed(sf::Keyboard::Key key)
 {
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
@@ -472,20 +599,31 @@ void OnKeyboardShortcut(sf::Keyboard::Key key)
 {
 	switch (key)
 	{
+		// File -> New
 		case sf::Keyboard::N:
 			OnFileNew();
 			break;
 
+		// File -> Open
 		case sf::Keyboard::O:
 			OnFileOpen();
 			break;
 
+		// File -> Save
+		case sf::Keyboard::S:
+			if (ImageLoaded)
+				OnFileSave();
+
+			break;
+
+		// File -> Export
 		case sf::Keyboard::E:
 			if (ImageLoaded)
 				OnFileExport();
 
 			break;
 
+		// File -> Exit
 		case sf::Keyboard::W:
 			OnExit();
 			break;
@@ -496,11 +634,13 @@ void OnKeyboardShortcut(sf::Keyboard::Key key)
 
 void RenderWorkspace()
 {
+	RenderWindow.draw(CurrentImageSprite);
+
+	static sf::RectangleShape rect;
 	if (ShowImageBorder)
 	{
 		auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
 
-		static sf::RectangleShape rect;
 		rect.setFillColor(sf::Color::Transparent);
 		rect.setOutlineColor(sf::Color::White);
 		rect.setOutlineThickness(1.f);
@@ -510,7 +650,46 @@ void RenderWorkspace()
 		RenderWindow.draw(rect);
 	}
 
-	RenderWindow.draw(CurrentImageSprite);
+	if (IsMouseInsideImage())
+	{
+		rect.setFillColor(sf::Color(255, 255, 255, 100));
+
+		if (ShowCurrentPixelBorder)
+		{
+			auto sprite_scale = CurrentImageSprite.getScale();
+
+			rect.setOutlineColor(sf::Color::White);
+			rect.setOutlineThickness(1.f);
+			rect.setPosition(sf::Vector2f(PixelToWindowCoords(CurrentPixelCoords)));
+			rect.setSize(sf::Vector2f(sprite_scale.x * OCIF::HexFont::Glyph::DefaultWidth, sprite_scale.y * OCIF::HexFont::Glyph::DefaultHeight));
+
+			RenderWindow.draw(rect);
+		}
+
+		if (ShowCurrentPixelFrame)
+		{
+			auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+
+			auto src_coords = PixelToWindowCoords(CurrentPixelCoords);
+			auto dst_coords = PixelToWindowCoords(CurrentPixelCoords + sf::Vector2i(1, 1));
+
+			rect.setOutlineThickness(0);
+
+			rect.setPosition(sprite_bounds.left, src_coords.y);
+			rect.setSize(sf::Vector2f(sprite_bounds.width, 1));
+			RenderWindow.draw(rect);
+
+			rect.setPosition(sprite_bounds.left, dst_coords.y);
+			RenderWindow.draw(rect);
+
+			rect.setPosition(src_coords.x, sprite_bounds.top);
+			rect.setSize(sf::Vector2f(1, sprite_bounds.height));
+			RenderWindow.draw(rect);
+
+			rect.setPosition(dst_coords.x, sprite_bounds.top);
+			RenderWindow.draw(rect);
+		}
+	}
 }
 
 //===========================================
@@ -525,6 +704,20 @@ void ProcessGUI()
 {
 	ProcessGUIMainMenuBar();
 	ProcessGUIPopups();
+
+	if (ShowToolsWindow)
+		ProcessGUIToolsWindow();
+
+	if (ShowImGuiDemoWindow)
+		ImGui::ShowDemoWindow(&ShowImGuiDemoWindow);
+
+	static char buffer[BUFFSIZE] = "";
+	sprintf_s(buffer, "%s settings", CurrentTool->getName());
+	if (ImGui::Begin(buffer))
+	{
+		CurrentTool->processGUI();
+		ImGui::End();
+	}
 
 	ImGui::SFML::Render(RenderWindow);
 }
@@ -545,19 +738,25 @@ void ProcessGUIMainMenuBar()
 			ImGui::EndMenu();
 		}
 
+		if (ImGui::BeginMenu("Debug"))
+		{
+			ProcessGUIDebugMenu();
+			ImGui::EndMenu();
+		}
+
 		ImGui::EndMainMenuBar();
 	}
 }
 
 void ProcessGUIFileMenu()
 {
-	if (ImGui::MenuItem(ICON_FA_FILE " New", "^N"))
+	if (ImGui::MenuItem(ICON_MD_CREATE_NEW_FOLDER " New", "^N"))
 		OnFileNew();
 		
-	if (ImGui::MenuItem(ICON_FA_FOLDER_OPEN " Open", "^O"))
+	if (ImGui::MenuItem(ICON_MD_FOLDER_OPEN " Open", "^O"))
 		OnFileOpen();
 
-	if (ImGui::BeginMenu(ICON_FA_CUBE " Open recent", !RecentFilesList.empty()))
+	if (ImGui::BeginMenu(ICON_MD_SCHEDULE " Open recent", !RecentFilesList.empty()))
 	{
 		ProcessGUIFileOpenRecentMenu();
 		ImGui::EndMenu();
@@ -567,14 +766,22 @@ void ProcessGUIFileMenu()
 	if (RecentFilesList.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("You have not opened any file yet");
 
-	if (ImGui::MenuItem(ICON_FA_FILE_EXPORT " Export", "^E", nullptr, ImageLoaded))
+	if (ImGui::MenuItem(ICON_MD_SAVE " Save", "^S", nullptr, ImageLoaded))
+		OnFileSave();
+
+	// Show tooltip if the save item is disabled
+	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("You have not loaded image yet");
+
+	if (ImGui::MenuItem(ICON_MD_DRIVE_FILE_MOVE " Export", "^E", nullptr, ImageLoaded))
 		OnFileExport();
 
 	// Show tooltip if the export item is disabled
 	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("You have not loaded image yet");
 
-	if (ImGui::MenuItem(ICON_FA_XMARK " Exit", "^W"))
+	ImGui::Separator();
+	if (ImGui::MenuItem(ICON_MD_CLOSE " Exit", "^W"))
 		OnExit();
 }
 
@@ -593,7 +800,16 @@ void ProcessGUIFileOpenRecentMenu()
 
 void ProcessGUIViewMenu()
 {
-	ImGui::MenuItem(ICON_FA_SQUARE " Image border", nullptr, &ShowImageBorder);
+	ImGui::MenuItem("Tools window", nullptr, &ShowToolsWindow);
+	ImGui::MenuItem("Image border", nullptr, &ShowImageBorder);
+	ImGui::MenuItem("Pixel border", nullptr, &ShowCurrentPixelBorder);
+	ImGui::MenuItem("Pixel frame",  nullptr, &ShowCurrentPixelFrame);
+}
+
+void ProcessGUIDebugMenu()
+{
+	if (ImGui::MenuItem("Show ImGui demo"))
+		ShowImGuiDemoWindow = true;
 }
 
 //===========================================
@@ -671,7 +887,25 @@ void ProcessGUIExportPopup()
 
 //===========================================
 
-void AppendRecentFilesList(const std::filesystem::path& path)
+void ProcessGUIToolsWindow()
+{
+	if (ImGui::Begin("Tools", &ShowToolsWindow))
+	{
+		for (Tool* tool: Tools)
+		{
+			static char buffer[BUFFSIZE] = "";
+			sprintf_s(buffer, "%s %s", tool->getIcon(), tool->getName());
+			if (ImGui::Selectable(buffer, tool == CurrentTool))
+				CurrentTool = tool;
+		}
+	}
+
+	ImGui::End();
+}
+
+//===========================================
+
+void AddToRecentFilesList(const std::filesystem::path& path)
 {
 	auto iter = std::find(RecentFilesList.begin(), RecentFilesList.end(), path);
 	if (iter == RecentFilesList.end())
@@ -727,6 +961,28 @@ bool SaveRecentFilesList()
 		stream << reinterpret_cast<const char*>(path.u8string().c_str()) << std::endl;
 
 	return true;
+}
+
+//===========================================
+
+sf::Vector2i WindowToPixelCoords(const sf::Vector2i& mouse)
+{
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+
+	return sf::Vector2i(
+		std::floor(((mouse.x - sprite_bounds.left) / sprite_bounds.width ) * CurrentImage.getWidth ()),
+		std::floor(((mouse.y - sprite_bounds.top ) / sprite_bounds.height) * CurrentImage.getHeight())
+	);
+}
+
+sf::Vector2i PixelToWindowCoords(const sf::Vector2i& pixel)
+{
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+
+	return sf::Vector2i(
+		sprite_bounds.left + (static_cast<float>(pixel.x) / CurrentImage.getWidth ()) * sprite_bounds.width,
+		sprite_bounds.top  + (static_cast<float>(pixel.y) / CurrentImage.getHeight()) * sprite_bounds.height
+	);
 }
 
 //===========================================

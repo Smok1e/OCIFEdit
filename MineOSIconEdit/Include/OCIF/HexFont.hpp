@@ -34,8 +34,11 @@ public:
 		const uint8_t* getData() const;
 		void setData(const uint8_t* data, size_t size);
 
+		size_t getDotBitIndex(unsigned x, unsigned y) const;
+
 		// Returns true if dot is set in 8x16 glyph by x and y
-		bool dot(unsigned x, unsigned y) const;
+		bool get(unsigned x, unsigned y) const;
+		void set(unsigned x, unsigned y, bool dot);
 
 		// Draws the glyph at x and y with specified background/foreground colors
 		void rasterize(sf::Image& image, unsigned x, unsigned y, sf::Color background, sf::Color foreground) const;
@@ -66,8 +69,14 @@ public:
 	void loadFromStream(std::istream& stream);
 	void loadFromFile(const std::filesystem::path& path);
 
-	const Glyph& getGlyph(uint32_t code);
-	const Glyph& operator[](uint32_t code);
+	void saveToStream(std::ostream& stream) const;
+	void saveToFile(const std::filesystem::path& path) const;
+
+	const Glyph& getGlyph(uint32_t code) const;
+	      Glyph& getGlyph(uint32_t code);
+
+	const Glyph& operator[](uint32_t code) const;
+	      Glyph& operator[](uint32_t code);
 
 protected:
 	std::map<uint32_t, Glyph> m_data;

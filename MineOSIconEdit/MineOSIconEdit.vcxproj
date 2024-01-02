@@ -105,11 +105,13 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/Include;C:\Users\smok1e\source\lib\Libs\ConsoleBuffer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\smok1e\source\lib\Libs\x64\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ConsoleBuffer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -121,33 +123,45 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
-      <AdditionalIncludeDirectories>$(ProjectDir)/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/Include;C:\Users\smok1e\source\lib\Libs\ConsoleBuffer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <EnableCOMDATFolding>true</EnableCOMDATFolding>
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>C:\Users\smok1e\source\lib\Libs\x64\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>ConsoleBuffer.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="Resources\font.hex" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\Main.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
+    </ClCompile>
     <ClCompile Include="Source\OCIF\Braille.cpp" />
     <ClCompile Include="Source\OCIF\Color.cpp" />
     <ClCompile Include="Source\OCIF\HexFont.cpp" />
     <ClCompile Include="Source\OCIF\Image.cpp" />
     <ClCompile Include="Source\OCIF\IO.cpp" />
+    <ClCompile Include="Source\Test.cpp">
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
+      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
+    </ClCompile>
+    <ClCompile Include="Source\Tools\Brush.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\IconsFontAwesome6.hpp" />
+    <ClInclude Include="Include\IconsMaterialDesign.hpp" />
     <ClInclude Include="Include\OCIF\Braille.hpp" />
     <ClInclude Include="Include\OCIF\Color.hpp" />
     <ClInclude Include="Include\OCIF\HexFont.hpp" />
     <ClInclude Include="Include\OCIF\Image.hpp" />
     <ClInclude Include="Include\OCIF\IO.hpp" />
+    <ClInclude Include="Include\Tools\Brush.hpp" />
+    <ClInclude Include="Include\Tools\Tool.hpp" />
   </ItemGroup>
   <ItemGroup>
     <Font Include="Resources\CascadiaCode.ttf" />

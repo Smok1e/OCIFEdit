@@ -6,6 +6,7 @@
 
 #define HEX2QUAD(byte) ((byte) > '9'? 10 + (byte) - 'A': (byte) - '0')
 #define HEX2BYTE(byte0, byte1) (HEX2QUAD(byte0) << 4) | HEX2QUAD(byte1)
+#define QUAD2HEX(byte) static_cast<char>(((byte) > 9? 'A' - 10: '0') + (byte))
 
 //===========================================
 
@@ -51,10 +52,25 @@ void HexFont::Glyph::setData(const uint8_t* data, size_t size)
 	m_size = size;
 }
 
-bool HexFont::Glyph::dot(unsigned x, unsigned y) const
+size_t HexFont::Glyph::getDotBitIndex(unsigned x, unsigned y) const
 {
+	return y * getWidth() + x;
+}
+
+bool HexFont::Glyph::get(unsigned x, unsigned y) const
+{
+	size_t index = getDotBitIndex(x, y);
+
 	// Each byte representing a row of 8 or 16 pixels
-	return ((m_data[(y * getWidth() + x) / 8] >> (7 - (x % 8)))) & 1;
+	return ((m_data[index / 8] >> (7 - (index % 8)))) & 1;
+}
+
+void HexFont::Glyph::set(unsigned x, unsigned y, bool dot)
+{
+	size_t index = getDotBitIndex(x, y);
+	size_t bit = 7 - (index % 8);
+
+	(m_data[index / 8] &= ~(1 << bit)) |= (dot << bit);
 }
 
 void HexFont::Glyph::rasterize(sf::Image& image, unsigned x, unsigned y, sf::Color background, sf::Color foreground) const
@@ -62,7 +78,7 @@ void HexFont::Glyph::rasterize(sf::Image& image, unsigned x, unsigned y, sf::Col
 	const auto& image_size = image.getSize();
 	for (size_t dot_x = 0; dot_x < getWidth() && x + dot_x < image_size.x; dot_x++)
 		for (size_t dot_y = 0; dot_y < getHeight() && y + dot_y < image_size.y; dot_y++)
-			image.setPixel(x + dot_x, y + dot_y, dot(dot_x, dot_y)? foreground: background);
+			image.setPixel(x + dot_x, y + dot_y, get(dot_x, dot_y)? foreground: background);
 }
 
 size_t HexFont::Glyph::getSize() const
@@ -109,17 +125,54 @@ void HexFont::loadFromFile(const std::filesystem::path& path)
 {
 	std::ifstream stream;
 	stream.exceptions(stream.exceptions() | std::ios::failbit);
-	stream.open(path, std::ios::binary);
+	stream.open(path);
 
 	loadFromStream(stream);
 }
 
-const HexFont::Glyph& HexFont::getGlyph(uint32_t ch)
+void HexFont::saveToStream(std::ostream& stream) const
+{
+	static char buffer[128] = "";
+	for (const auto& [codepoint, glyph]: m_data)
+	{
+		stream.write(buffer, sprintf_s(buffer, "%04X:", codepoint));
+
+		const uint8_t* data = glyph.getData();
+		for (size_t i = 0; i < glyph.getSize(); i++)
+		{
+			stream.put(QUAD2HEX(data[i] >> 4));
+			stream.put(QUAD2HEX(data[i] & 0xF));
+		}
+
+		stream.put('\n');
+	}
+}
+
+void HexFont::saveToFile(const std::filesystem::path& path) const
+{
+	std::ofstream stream;
+	stream.exceptions(stream.exceptions() | std::ios::failbit);
+	stream.open(path);
+
+	saveToStream(stream);
+}
+
+const HexFont::Glyph& HexFont::getGlyph(uint32_t ch) const
 {
 	return m_data.at(ch);
 }
 
-const HexFont::Glyph& HexFont::operator[](uint32_t ch)
+HexFont::Glyph& HexFont::getGlyph(uint32_t ch)
+{
+	return m_data.at(ch);
+}
+
+const HexFont::Glyph& HexFont::operator[](uint32_t ch) const
+{
+	return getGlyph(ch);
+}
+
+HexFont::Glyph& HexFont::operator[](uint32_t ch)
 {
 	return getGlyph(ch);
 }
