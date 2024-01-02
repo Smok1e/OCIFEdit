@@ -13,59 +13,56 @@
       <UniqueIdentifier>{67DA6AB6-F800-4c08-8B7A-83BB121AAD01}</UniqueIdentifier>
       <Extensions>rc;ico;cur;bmp;dlg;rc2;rct;bin;rgs;gif;jpg;jpeg;jpe;resx;tiff;tif;png;wav;mfcribbon-ms</Extensions>
     </Filter>
-  </ItemGroup>
-  <ItemGroup>
-    <ClCompile Include="Main.cpp.old">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Image.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Test.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="IO.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Color.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Braille.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="HexFont.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Image.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IO.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Color.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Braille.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Main.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="HexFont.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="IconsFontAwesome6.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
+    <Filter Include="Source Files\OCIF">
+      <UniqueIdentifier>{2bcb65ef-2322-46d5-ad23-cb233607c269}</UniqueIdentifier>
+    </Filter>
+    <Filter Include="Header Files\OCIF">
+      <UniqueIdentifier>{7095c2a2-69ae-44a0-8d72-2527042a5f1a}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <None Include="font.hex">
       <Filter>Resource Files</Filter>
     </None>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Main.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\OCIF\Braille.cpp">
+      <Filter>Source Files\OCIF</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\OCIF\Color.cpp">
+      <Filter>Source Files\OCIF</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\OCIF\HexFont.cpp">
+      <Filter>Source Files\OCIF</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\OCIF\Image.cpp">
+      <Filter>Source Files\OCIF</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\OCIF\IO.cpp">
+      <Filter>Source Files\OCIF</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\OCIF\Braille.hpp">
+      <Filter>Header Files\OCIF</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\OCIF\Color.hpp">
+      <Filter>Header Files\OCIF</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\OCIF\HexFont.hpp">
+      <Filter>Header Files\OCIF</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\OCIF\Image.hpp">
+      <Filter>Header Files\OCIF</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\OCIF\IO.hpp">
+      <Filter>Header Files\OCIF</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\IconsFontAwesome6.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

@@ -105,6 +105,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -120,6 +121,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <LanguageStandard>stdcpp20</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -129,32 +131,23 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Braille.cpp" />
-    <ClCompile Include="Color.cpp" />
-    <ClCompile Include="HexFont.cpp" />
-    <ClCompile Include="IO.cpp" />
-    <ClCompile Include="Main.cpp" />
-    <ClCompile Include="Main.cpp.old">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-    <ClCompile Include="Image.cpp" />
-    <ClCompile Include="Test.cpp">
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
-      <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
-    </ClCompile>
-  </ItemGroup>
-  <ItemGroup>
-    <ClInclude Include="Braille.hpp" />
-    <ClInclude Include="Color.hpp" />
-    <ClInclude Include="HexFont.hpp" />
-    <ClInclude Include="IconsFontAwesome6.hpp" />
-    <ClInclude Include="IO.hpp" />
-    <ClInclude Include="Image.hpp" />
-    <ClInclude Include="Main.hpp" />
-  </ItemGroup>
-  <ItemGroup>
     <None Include="font.hex" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="Source\Main.cpp" />
+    <ClCompile Include="Source\OCIF\Braille.cpp" />
+    <ClCompile Include="Source\OCIF\Color.cpp" />
+    <ClCompile Include="Source\OCIF\HexFont.cpp" />
+    <ClCompile Include="Source\OCIF\Image.cpp" />
+    <ClCompile Include="Source\OCIF\IO.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="Include\IconsFontAwesome6.hpp" />
+    <ClInclude Include="Include\OCIF\Braille.hpp" />
+    <ClInclude Include="Include\OCIF\Color.hpp" />
+    <ClInclude Include="Include\OCIF\HexFont.hpp" />
+    <ClInclude Include="Include\OCIF\Image.hpp" />
+    <ClInclude Include="Include\OCIF\IO.hpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

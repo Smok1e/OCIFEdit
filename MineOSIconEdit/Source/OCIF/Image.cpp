@@ -1,9 +1,9 @@
 #include <fstream>
 
-#include "IO.hpp"
-#include "Image.hpp"
-#include "Color.hpp"
-#include "Braille.hpp"
+#include "OCIF/IO.hpp"
+#include "OCIF/Image.hpp"
+#include "OCIF/Color.hpp"
+#include "OCIF/Braille.hpp"
 
 //===========================================
 

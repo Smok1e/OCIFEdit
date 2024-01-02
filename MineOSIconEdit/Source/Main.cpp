@@ -16,8 +16,8 @@
 #include <imgui-SFML.h>
 
 #include "IconsFontAwesome6.hpp"
-#include "HexFont.hpp"
-#include "Image.hpp"
+#include "OCIF/HexFont.hpp"
+#include "OCIF/Image.hpp"
 
 //===========================================
 
