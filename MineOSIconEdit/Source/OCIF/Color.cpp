@@ -21,6 +21,11 @@ Color To24BitColor(sf::Color color)
 	return static_cast<Color>(color.r) << 16 | static_cast<Color>(color.g) << 8 | static_cast<Color>(color.b);
 }
 
+Color To24BitColor(float* arr)
+{
+	return static_cast<Color>(arr[0] * 0xFF) << 16 | static_cast<Color>(arr[1] * 0xFF) << 8 | static_cast<Color>(arr[2] * 0xFF);
+}
+
 sf::Color ToSFColor(Color color, double alpha /*= 0.0*/)
 {
 	return sf::Color(
@@ -66,9 +71,19 @@ uint8_t To8BitColor(sf::Color color)
 	return closest;
 }
 
+uint8_t To8BitColor(Color color)
+{
+	return To8BitColor(ToSFColor(color));
+}
+
 double ColorDiffAvg(sf::Color a, sf::Color b)
 {
 	return sqrt(std::pow(a.r-b.r, 2) + std::pow(a.g-b.g, 2) + std::pow(a.b-b.b, 2));
+}
+
+Color NormalizeColor(Color color)
+{
+	return To24BitColor(To8BitColor(color));
 }
 
 //===========================================

@@ -57,19 +57,21 @@ sf::Vector2i                      DragStartMousePosition;
 sf::Vector2i                      DragStartSpritePosition;
 
 // Popups state
-bool        NewFilePopupOpened     = false;
-bool        MessageBoxPopupOpened  = false;
-std::string MessageBoxPopupTitle   = "";
-std::string MessageBoxPopupMessage = "";
+bool                  NewFilePopupOpened     = false;
+bool                  MessageBoxPopupOpened  = false;
+std::string           MessageBoxPopupTitle   = "";
+std::string           MessageBoxPopupMessage = "";
+bool                  ExportPopupOpened      = false;
+std::filesystem::path ExportPath             = "";
 
 //===========================================
 
 bool Initialize();
 void StartLoop();
 void Update();
-void NewFile(int width, int height);
+void NewFile(int width, int height, OCIF::Color color);
 void LoadFile(const std::filesystem::path& path);
-void ExportFile(const std::filesystem::path& path);
+void ExportFile(const std::filesystem::path& path, float scale);
 void MaximizeWindow();
 void ShowMessageBox(std::string_view title, std::string_view message);
 
@@ -101,6 +103,7 @@ void ProcessGUIViewMenu();
 void ProcessGUIPopups();
 void ProcessGUIFileNewPopup();
 void ProcessGUIMessageBoxPopup();
+void ProcessGUIExportPopup();
 
 void AppendRecentFilesList(const std::filesystem::path& path);
 void RemoveFromRecentFilesList(const std::filesystem::path& path);
@@ -205,7 +208,7 @@ void Update()
 	}
 }
 
-void NewFile(int width, int height)
+void NewFile(int width, int height, OCIF::Color color)
 {
 	if (width < 1 || height < 1)
 	{
@@ -216,7 +219,7 @@ void NewFile(int width, int height)
 	CurrentImage.resize(width, height);
 	CurrentImage.clear({
 		' ',
-		0xFFFFFF,
+		color,
 		0x000000,
 		0.0
 	});
@@ -253,9 +256,21 @@ void LoadFile(const std::filesystem::path& path)
 	}
 }
 
-void ExportFile(const std::filesystem::path& path)
+void ExportFile(const std::filesystem::path& path, float scale)
 {
-	CurrentRasterizedImage.saveToFile(path.string());
+	sf::Texture texture;
+	texture.loadFromImage(CurrentRasterizedImage);
+
+	sf::Sprite sprite;
+	sprite.setTexture(CurrentRasterizedTexture);
+	sprite.setScale(scale, scale);
+
+	auto bounds = sprite.getGlobalBounds();
+	sf::RenderTexture render_texture;
+	render_texture.create(bounds.width, bounds.height);
+	render_texture.draw(sprite);
+	render_texture.display();
+	render_texture.getTexture().copyToImage().saveToFile(path.string());
 }
 
 void MaximizeWindow()
@@ -430,7 +445,10 @@ void OnFileExport()
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
 
 	if (GetSaveFileNameW(&ofn))
-		ExportFile(ofn.lpstrFile);
+	{
+		ExportPath = ofn.lpstrFile;
+		ExportPopupOpened = true;
+	}
 }
 
 void OnKeyPressed(sf::Keyboard::Key key)
@@ -601,6 +619,16 @@ void ProcessGUIPopups()
 		ProcessGUIMessageBoxPopup();
 		ImGui::EndPopup();
 	}
+
+	if (ExportPopupOpened)
+		ImGui::OpenPopup("Export image");
+
+	CenterNextWindow();
+	if (ImGui::BeginPopupModal("Export image", &ExportPopupOpened, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ProcessGUIExportPopup();
+		ImGui::EndPopup();
+	}
 }
 
 void ProcessGUIFileNewPopup()
@@ -608,9 +636,12 @@ void ProcessGUIFileNewPopup()
 	static int size[2] = { 8, 4 };
 	ImGui::InputInt2("Image size", size);
 
+	static float color[3] = { 1.f, 1.f, 1.f };
+	ImGui::ColorPicker3("Fill color", color);
+
 	if (ImGui::Button("Ok"))
 	{
-		NewFile(size[0], size[1]);
+		NewFile(size[0], size[1], OCIF::NormalizeColor(OCIF::To24BitColor(color)));
 		NewFilePopupOpened = false;
 	}
 }
@@ -621,6 +652,21 @@ void ProcessGUIMessageBoxPopup()
 
 	if (ImGui::Button("Ok"))
 		MessageBoxPopupOpened = false;
+}
+
+void ProcessGUIExportPopup()
+{
+	static float scale = 1.f;
+	ImGui::SliderFloat("Output scale", &scale, .1f, 10.f);
+
+	auto image_size = CurrentRasterizedImage.getSize();
+	ImGui::Text("Output (scaled) resolution: %.0fx%.0f", image_size.x * scale, image_size.y * scale);
+
+	if (ImGui::Button("Ok"))
+	{
+		ExportFile(ExportPath, scale);
+		ExportPopupOpened = false;
+	}
 }
 
 //===========================================
