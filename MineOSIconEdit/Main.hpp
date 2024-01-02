@@ -35,15 +35,15 @@ protected:
 	const size_t                RecentFilesListLimit    = 10;
 	const std::filesystem::path RecentFilesListLocation = "recent.txt";
 
-	bool              m_initialized { false };
-	sf::RenderWindow  m_window;
-	sf::Clock         m_clock;
-	OCIF::Image       m_ocif_image;
-	sf::Image         m_image;
-	sf::Texture       m_texture;
-	sf::Sprite        m_sprite;
-	float             m_scale { 1.f };
-	OCIF::HexFont     m_font;
+	bool             m_initialized { false };
+	sf::RenderWindow m_window;
+	sf::Clock        m_clock;
+	OCIF::Image      m_ocif_image;
+	sf::Image        m_image;
+	sf::Texture      m_texture;
+	sf::Sprite       m_sprite;
+	float            m_scale { 1.f };
+	OCIF::HexFont    m_font;
 
 	bool         m_dragging { false };
 	sf::Vector2i m_drag_mouse_position;
