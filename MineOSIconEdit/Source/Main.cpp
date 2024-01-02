@@ -22,16 +22,17 @@
 //===========================================
 
 // Constants
-constexpr size_t                  BUFFSIZE                = 1024;
-const std::filesystem::path       RESOURCES_BASE_DIR      = "Resources";              // Resources directory path
-const std::filesystem::path       GUI_FONT_PATH           = "CascadiaCode.ttf";       // Unicode font used to display text in GUI
-constexpr float                   GUI_FONT_SIZE           = 18.f;                     // GUI text size
-const std::filesystem::path       OC_FONT_PATH            = "font.hex";               // Opencomputers font in their own hex format
-const std::filesystem::path       RECENT_FILES_LIST_PATH  = "recent.txt";             // Cached list of recently open files
-constexpr size_t                  RECENT_FILES_LIST_LIMIT = 10;                       // Limit of recently open files
-const sf::Color                   BACKGROUND_COLOR        = sf::Color(24, 24, 24);    // Window background color
-sf::Vector2u                      WINDOW_INITIAL_SIZE     = sf::Vector2u(1000, 1000); // Render window size when it is initially opened
-const char*                       WINDOW_TITLE            = "OCIF edit";              // Render window title
+constexpr size_t            BUFFSIZE                = 1024;
+const std::filesystem::path RESOURCES_BASE_DIR      = "Resources";              // Resources directory path
+const std::filesystem::path GUI_FONT_PATH           = "CascadiaCode.ttf";       // Unicode font used to display text in GUI
+constexpr float             GUI_FONT_SIZE           = 18.f;                     // GUI text size
+const std::filesystem::path OC_FONT_PATH            = "font.hex";               // Opencomputers font in their own hex format
+const std::filesystem::path RECENT_FILES_LIST_PATH  = "recent.txt";             // Cached list of recently open files
+constexpr size_t            RECENT_FILES_LIST_LIMIT = 10;                       // Limit of recently open files
+const sf::Color             BACKGROUND_COLOR        = sf::Color(24, 24, 24);    // Window background color
+sf::Vector2u                WINDOW_INITIAL_SIZE     = sf::Vector2u(1000, 1000); // Render window size when it is initially opened
+const char*                 WINDOW_TITLE            = "OCIF edit";              // Render window title
+const std::filesystem::path WINDOW_ICON_PATH        = "Icon.png";               // Render window icon
 
 // Context variables
 OCIF::HexFont                     OpencomputersFont;
@@ -55,15 +56,22 @@ bool                              Dragging = false;
 sf::Vector2i                      DragStartMousePosition;
 sf::Vector2i                      DragStartSpritePosition;
 
+// Popups state
+bool        NewFilePopupOpened     = false;
+bool        MessageBoxPopupOpened  = false;
+std::string MessageBoxPopupTitle   = "";
+std::string MessageBoxPopupMessage = "";
+
 //===========================================
 
 bool Initialize();
 void StartLoop();
 void Update();
-void NewFile(unsigned width, unsigned height);
+void NewFile(int width, int height);
 void LoadFile(const std::filesystem::path& path);
 void ExportFile(const std::filesystem::path& path);
 void MaximizeWindow();
+void ShowMessageBox(std::string_view title, std::string_view message);
 
 void UpdateTexture();
 void ResetImage();
@@ -75,6 +83,7 @@ void OnMouseButtonReleased(sf::Mouse::Button button);
 void OnZoom(int direction);
 void OnDragStart();
 void OnDragStop();
+void OnKeyPressed(sf::Keyboard::Key key);
 void OnKeyboardShortcut(sf::Keyboard::Key key);
 void OnExit();
 void OnFileNew();
@@ -83,11 +92,15 @@ void OnFileExport();
 
 void RenderWorkspace();
 
+void CenterNextWindow();
 void ProcessGUI();
 void ProcessGUIMainMenuBar();
 void ProcessGUIFileMenu();
 void ProcessGUIFileOpenRecentMenu();
 void ProcessGUIViewMenu();
+void ProcessGUIPopups();
+void ProcessGUIFileNewPopup();
+void ProcessGUIMessageBoxPopup();
 
 void AppendRecentFilesList(const std::filesystem::path& path);
 void RemoveFromRecentFilesList(const std::filesystem::path& path);
@@ -124,9 +137,13 @@ bool Initialize()
 	RenderWindow.create(sf::VideoMode(WINDOW_INITIAL_SIZE.x, WINDOW_INITIAL_SIZE.y), WINDOW_TITLE);
 	MaximizeWindow();
 
+	sf::Image icon;
+	if (icon.loadFromFile((RESOURCES_BASE_DIR/WINDOW_ICON_PATH).string()))
+		RenderWindow.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
+
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);
-	
+
 	// Loading fonts
 	auto& io = ImGui::GetIO();
 	io.Fonts->Clear();
@@ -145,6 +162,12 @@ bool Initialize()
 	io.Fonts->Build();
 
 	ImGui::SFML::UpdateFontTexture();
+
+	// Rounded corners
+	ImGuiStyle& style = ImGui::GetStyle();
+	style.FrameRounding  = 5.f;
+	style.WindowRounding = 5.f;
+	style.PopupRounding  = 5.f;
 
 	return true;
 }
@@ -182,8 +205,14 @@ void Update()
 	}
 }
 
-void NewFile(unsigned width, unsigned height)
+void NewFile(int width, int height)
 {
+	if (width < 1 || height < 1)
+	{
+		ShowMessageBox("Unable to create image", "Invalid image size");
+		return;
+	}
+
 	CurrentImage.resize(width, height);
 	CurrentImage.clear({
 		' ',
@@ -216,10 +245,10 @@ void LoadFile(const std::filesystem::path& path)
 
 	catch (std::exception exc)
 	{
-		std::wstringstream stream;
-		stream << "Unable to load file '" << path.filename().wstring() << "': " << exc.what() << std::endl;
+		std::stringstream stream;
+		stream << "Unable to load file '" << reinterpret_cast<const char*>(path.filename().u8string().c_str()) << "': " << exc.what() << std::endl;
 
-		MessageBoxW(RenderWindow.getSystemHandle(), stream.str().c_str(), L"Unable to load file", MB_ICONERROR | MB_OK);
+		ShowMessageBox("Unable to load file", stream.str());
 		RemoveFromRecentFilesList(path);
 	}
 }
@@ -234,6 +263,13 @@ void MaximizeWindow()
 	// There is no way to maximize window in SFML 
 	// so we have to do it by using native Windows API
 	PostMessageA(RenderWindow.getSystemHandle(), WM_SYSCOMMAND, SC_MAXIMIZE, 0);
+}
+
+void ShowMessageBox(std::string_view title, std::string_view message)
+{
+	MessageBoxPopupTitle   = std::string(title) + "##msgbox";
+	MessageBoxPopupMessage = message;
+	MessageBoxPopupOpened  = true;
 }
 
 //===========================================
@@ -283,9 +319,7 @@ void OnEvent(const sf::Event& event)
 			break;
 
 		case sf::Event::KeyPressed:
-			if (!io.WantCaptureKeyboard && sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
-				OnKeyboardShortcut(event.key.code);
-
+			OnKeyPressed(event.key.code);
 			break;
 
 		case sf::Event::MouseButtonPressed:
@@ -354,7 +388,7 @@ void OnExit()
 
 void OnFileNew()
 {
-	NewFile(8, 4);
+	NewFilePopupOpened = true;
 }
 
 void OnFileOpen()
@@ -397,6 +431,23 @@ void OnFileExport()
 
 	if (GetSaveFileNameW(&ofn))
 		ExportFile(ofn.lpstrFile);
+}
+
+void OnKeyPressed(sf::Keyboard::Key key)
+{
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+	{
+		OnKeyboardShortcut(key);
+		return;
+	}
+
+	switch (key)
+	{
+		case sf::Keyboard::Escape:
+			NewFilePopupOpened = false;
+			MessageBoxPopupOpened = false;
+			break;
+	}
 }
 
 void OnKeyboardShortcut(sf::Keyboard::Key key)
@@ -444,9 +495,19 @@ void RenderWorkspace()
 	RenderWindow.draw(CurrentImageSprite);
 }
 
+//===========================================
+
+void CenterNextWindow()
+{
+	ImVec2 center = ImGui::GetMainViewport()->GetCenter();
+	ImGui::SetNextWindowPos(center, ImGuiCond_Appearing, ImVec2(.5f, .5f));
+}
+
 void ProcessGUI()
 {
 	ProcessGUIMainMenuBar();
+	ProcessGUIPopups();
+
 	ImGui::SFML::Render(RenderWindow);
 }
 
@@ -515,6 +576,51 @@ void ProcessGUIFileOpenRecentMenu()
 void ProcessGUIViewMenu()
 {
 	ImGui::MenuItem(ICON_FA_SQUARE " Image border", nullptr, &ShowImageBorder);
+}
+
+//===========================================
+
+void ProcessGUIPopups()
+{
+	if (NewFilePopupOpened)
+		ImGui::OpenPopup("Create new image");
+
+	CenterNextWindow();
+	if (ImGui::BeginPopupModal("Create new image", &NewFilePopupOpened, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ProcessGUIFileNewPopup();
+		ImGui::EndPopup();
+	}
+
+	if (MessageBoxPopupOpened)
+		ImGui::OpenPopup(MessageBoxPopupTitle.c_str());
+
+	CenterNextWindow();
+	if (ImGui::BeginPopupModal(MessageBoxPopupTitle.c_str(), &MessageBoxPopupOpened, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ProcessGUIMessageBoxPopup();
+		ImGui::EndPopup();
+	}
+}
+
+void ProcessGUIFileNewPopup()
+{
+	static int size[2] = { 8, 4 };
+	ImGui::InputInt2("Image size", size);
+
+	if (ImGui::Button("Ok"))
+	{
+		NewFile(size[0], size[1]);
+		NewFilePopupOpened = false;
+	}
+}
+
+void ProcessGUIMessageBoxPopup()
+{
+	ImGui::Text(MessageBoxPopupMessage.c_str());
+
+	if (ImGui::Button("Ok"))
+		MessageBoxPopupOpened = false;
 }
 
 //===========================================

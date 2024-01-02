@@ -131,7 +131,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <None Include="font.hex" />
+    <None Include="Resources\font.hex" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp" />
@@ -148,6 +148,10 @@
     <ClInclude Include="Include\OCIF\HexFont.hpp" />
     <ClInclude Include="Include\OCIF\Image.hpp" />
     <ClInclude Include="Include\OCIF\IO.hpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <Font Include="Resources\CascadiaCode.ttf" />
+    <Font Include="Resources\fa-solid-900.ttf" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
