@@ -550,7 +550,7 @@ bool LoadRecentFilesList()
 
 		std::string line;
 		while (std::getline(stream, line))
-			RecentFilesList.push_back(line);
+			RecentFilesList.push_back(reinterpret_cast<const char8_t*>(line.c_str()));
 
 		return true;
 	}
