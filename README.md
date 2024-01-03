@@ -1,7 +1,7 @@
 # OCIF Edit
 A program to view and edit pictures in OCIF format.
 
-OCIF is an image format that stores every pixel as unicode character with background, foreground and alpha values.
+OCIF (OpenComputers Image Format) stores every pixel as unicode character with background, foreground and alpha values.
 This format was developed by [Igor Timofeev](https://Github.com/IgorTimofeev) to use it in [MineOS](https://Github.com/IgorTimofeev/MineOS),
 an operating system for [OpenComputers](https://github.com/MightyPirates/OpenComputers/) Minecraft mod.
 
