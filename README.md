@@ -1,3 +1,9 @@
 A program to view and edit pictures in OCIF format used in [MineOS](https://Github.com/IgorTimofeev/MineOS)
 
-![image](https://github.com/Smok1e/MineOSIconEdit/assets/33802666/f7b9a686-b2cb-49b7-b63e-38af0e6c7efb)
+![image](https://github.com/Smok1e/MineOSIconEdit/assets/33802666/61bf2944-0125-4083-88f9-c5771a9f71b1)
+
+## Features
+* Open OCIF6/OCIF7/OCIF8-encoded images
+* Save OCIF8-encoded images
+* Export to png/jpg/bmp/tga
+* Braille subpixel editor
