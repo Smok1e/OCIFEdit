@@ -42,10 +42,19 @@
     <ClCompile Include="Source\OCIF\IO.cpp">
       <Filter>Source Files\OCIF</Filter>
     </ClCompile>
-    <ClCompile Include="Source\Tools\Brush.cpp">
+    <ClCompile Include="Source\Tools\BrushTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Source\Test.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tools\BrailleTool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tools\Tool.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="Source\Tools\EraserTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -65,13 +74,22 @@
     <ClInclude Include="Include\OCIF\IO.hpp">
       <Filter>Header Files\OCIF</Filter>
     </ClInclude>
-    <ClInclude Include="Include\IconsMaterialDesign.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="Include\Tools\Brush.hpp">
+    <ClInclude Include="Include\Tools\BrushTool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="Include\Tools\Tool.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Main.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Tools\BrailleTool.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\Tools\EraserTool.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\MaterialDesignIcons.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

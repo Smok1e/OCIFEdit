@@ -12,19 +12,15 @@ public:
 
 	virtual const char* getIcon() const override;
 	virtual const char* getName() const override;
+	virtual sf::Keyboard::Key getHotkey() const;
 
-	virtual bool onDraw(
-		sf::Mouse::Button button,
-		OCIF::Image& image, 
-		OCIF::HexFont& font,
-		sf::Image& rasterized_image, 
-		const sf::Vector2i& coords
-	);
-
+	virtual bool onDraw(sf::Mouse::Button button) override;
+	virtual void onRenderWorkspace() override;
 	virtual void processGUI() override;
 
 protected:
 	sf::Color m_current_color { sf::Color::White };
+	bool m_show_crosshair { true };
 
 };
 

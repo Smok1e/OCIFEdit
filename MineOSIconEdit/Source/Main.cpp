@@ -1,52 +1,30 @@
-﻿// Tell Windows.h to not define MIN and MAX macros to be compatiable with SFML
-#define NOMINMAX
-
-#include <deque>
-#include <vector>
-#include <filesystem>
-#include <fstream>
-#include <iostream>
-#include <sstream>
-#include <string>
-
-#include <Windows.h>
-
-#include <SFML/Graphics.hpp>
-
-#include <imgui.h>
-#include <imgui-SFML.h>
-
-#include "IconsMaterialDesign.hpp"
-
-#include "OCIF/HexFont.hpp"
-#include "OCIF/Image.hpp"
-
-#include "Tools/Brush.hpp"
+﻿#include <Main.hpp>
 
 //===========================================
 
-// Constants
-constexpr size_t            BUFFSIZE                = 1024;
-const std::filesystem::path RESOURCES_BASE_DIR      = "Resources";              // Resources directory path
-const std::filesystem::path GUI_FONT_PATH           = "CascadiaCode.ttf";       // Unicode font used to display text in GUI
-constexpr float             GUI_FONT_SIZE           = 18.f;                     // GUI text size
-const std::filesystem::path OC_FONT_PATH            = "font.hex";               // Opencomputers font in their own hex format
-const std::filesystem::path RECENT_FILES_LIST_PATH  = "recent.txt";             // Cached list of recently open files
-constexpr size_t            RECENT_FILES_LIST_LIMIT = 10;                       // Limit of recently open files
-const sf::Color             BACKGROUND_COLOR        = sf::Color(24, 24, 24);    // Window background color
-sf::Vector2u                WINDOW_INITIAL_SIZE     = sf::Vector2u(1000, 1000); // Render window size when it is initially opened
-const char*                 WINDOW_TITLE            = "OCIF edit";              // Render window title
-const std::filesystem::path WINDOW_ICON_PATH        = "Icon.png";               // Render window icon
+const std::filesystem::path RESOURCES_BASE_DIR      = "Resources";                 // Resources directory path
+const std::filesystem::path GUI_FONT_PATH           = "CascadiaCode.ttf";          // Unicode font used to display text in GUI
+const std::filesystem::path GUI_ICONS_FONT_PATH     = "MaterialIcons-Regular.ttf"; // Font used to display icons in GUI
+const float                 GUI_FONT_SIZE           = 18.f;                        // GUI text size
+const std::filesystem::path OC_FONT_PATH            = "font.hex";                  // Opencomputers font in their own hex format
+const std::filesystem::path RECENT_FILES_LIST_PATH  = "recent.txt";                // Cached list of recently open files
+const size_t                RECENT_FILES_LIST_LIMIT = 10;                          // Limit of recently open files
+const sf::Color             BACKGROUND_COLOR        = sf::Color(24, 24, 24);       // Window background color
+const sf::Vector2u          WINDOW_INITIAL_SIZE     = sf::Vector2u(1000, 1000);    // Render window size when it is initially opened
+const char*                 WINDOW_TITLE            = "OCIF edit";                 // Render window title
+const std::filesystem::path WINDOW_ICON_PATH        = "Icon.png";                  // Render window icon
 
-// Context variables
 OCIF::HexFont                     OpencomputersFont;
 std::deque<std::filesystem::path> RecentFilesList;
 sf::RenderWindow                  RenderWindow;
 sf::Cursor                        DefaultCursor;
 sf::Cursor                        MovingCursor;
+sf::Cursor                        LoadingCursor;
+std::stack<sf::Cursor*>           MouseCursorStack;
 sf::Clock                         DeltaClock;
 
 bool                              ImageLoaded = false;
+bool                              ImageLoadedFromFile = false;
 OCIF::Image                       CurrentImage;
 sf::Image                         CurrentRasterizedImage;
 sf::Texture                       CurrentRasterizedTexture;
@@ -54,92 +32,29 @@ sf::Sprite                        CurrentImageSprite;
 std::filesystem::path             CurrentImagePath;
 float                             CurrentImageScale = 1.f;
 
-bool                              ShowImageBorder        = false;
-bool                              ShowImGuiDemoWindow    = false;
-bool                              ShowCurrentPixelBorder = false;
-bool                              ShowCurrentPixelFrame  = false;
+bool                              ShowImageBorder     = false;
+bool                              ShowImGuiDemoWindow = false;
 
 bool                              Dragging = false;
 sf::Vector2i                      DragStartMousePosition;
 sf::Vector2i                      DragStartSpritePosition;
 
-// Tools
-bool               ShowToolsWindow = true;
-std::vector<Tool*> Tools;
-Tool*              CurrentTool = nullptr;
-bool               Drawing = false;
-sf::Mouse::Button  DrawingButton;
-sf::Vector2i       CurrentPixelCoords;
+bool                              ShowToolsWindow = true;
+std::vector<Tool*>                Tools;
+Tool*                             CurrentTool = nullptr;
+bool                              Drawing = false;
+sf::Mouse::Button                 DrawingButton;
+sf::Vector2i                      CurrentMouseCoords;
+sf::Vector2i                      CurrentImageCoords;
+sf::Vector2i                      CurrentPixelCoords;
+sf::Vector2i                      CurrentBrailleCoords;
 
-// Popups state
-bool                  NewFilePopupOpened     = false;
-bool                  MessageBoxPopupOpened  = false;
-std::string           MessageBoxPopupTitle   = "";
-std::string           MessageBoxPopupMessage = "";
-bool                  ExportPopupOpened      = false;
-std::filesystem::path ExportPath             = "";
-
-//===========================================
-
-bool Initialize();
-void StartLoop();
-void Cleanup();
-
-void Update();
-void NewFile(int width, int height, OCIF::Color color);
-void LoadFile(const std::filesystem::path& path);
-void SaveFile(const std::filesystem::path& path);
-void ExportFile(const std::filesystem::path& path, float scale);
-void MaximizeWindow();
-void ShowMessageBox(std::string_view title, std::string_view message);
-
-bool IsMouseInsideImage();
-
-void UpdateTexture();
-void ResetImage();
-void SetImageScale(float scale);
-
-void OnEvent(const sf::Event& event);
-void OnMouseButtonPressed(sf::Mouse::Button button);
-void OnMouseButtonReleased(sf::Mouse::Button button);
-void OnZoom(int direction);
-void OnDragStart();
-void OnDragStop();
-void OnKeyPressed(sf::Keyboard::Key key);
-void OnKeyboardShortcut(sf::Keyboard::Key key);
-void OnExit();
-void OnFileNew();
-void OnFileOpen();
-void OnFileSave();
-void OnFileExport();
-void OnDrawStart(sf::Mouse::Button button);
-void OnDrawStop();
-void OnDraw(sf::Mouse::Button button);
-
-void RenderWorkspace();
-
-void CenterNextWindow();
-void ProcessGUI();
-void ProcessGUIMainMenuBar();
-void ProcessGUIFileMenu();
-void ProcessGUIFileOpenRecentMenu();
-void ProcessGUIViewMenu();
-void ProcessGUIDebugMenu();
-
-void ProcessGUIPopups();
-void ProcessGUIFileNewPopup();
-void ProcessGUIMessageBoxPopup();
-void ProcessGUIExportPopup();
-
-void ProcessGUIToolsWindow();
-
-void AddToRecentFilesList(const std::filesystem::path& path);
-void RemoveFromRecentFilesList(const std::filesystem::path& path);
-bool LoadRecentFilesList();
-bool SaveRecentFilesList();
-
-sf::Vector2i WindowToPixelCoords(const sf::Vector2i& mouse);
-sf::Vector2i PixelToWindowCoords(const sf::Vector2i& pixel);
+bool                              NewFilePopupOpened     = false;
+bool                              MessageBoxPopupOpened  = false;
+std::string                       MessageBoxPopupTitle   = "";
+std::string                       MessageBoxPopupMessage = "";
+bool                              ExportPopupOpened      = false;
+std::filesystem::path             ExportPath             = "";
 
 //===========================================
 
@@ -165,8 +80,9 @@ bool Initialize()
 	LoadRecentFilesList();
 
 	// Cursors
-	DefaultCursor.loadFromSystem(sf::Cursor::Arrow);
-	MovingCursor.loadFromSystem(sf::Cursor::SizeAll);
+	DefaultCursor.loadFromSystem(sf::Cursor::Arrow  );
+	MovingCursor.loadFromSystem (sf::Cursor::SizeAll);
+	LoadingCursor.loadFromSystem(sf::Cursor::Wait   );
 
 	// Initializing window
 	RenderWindow.create(sf::VideoMode(WINDOW_INITIAL_SIZE.x, WINDOW_INITIAL_SIZE.y), WINDOW_TITLE);
@@ -176,6 +92,7 @@ bool Initialize()
 	if (icon.loadFromFile((RESOURCES_BASE_DIR/WINDOW_ICON_PATH).string()))
 		RenderWindow.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 
+	PushMouseCursor(DefaultCursor);
 	MaximizeWindow();
 
 	// ImGui
@@ -190,13 +107,13 @@ bool Initialize()
 	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/GUI_FONT_PATH).string().c_str(), GUI_FONT_SIZE, nullptr, utf8_ranges);
 
 	// Loading MaterialDesign and merging icons glyphs to previous font
-	static const ImWchar icons_ranges[] = { ICON_MIN_MD, ICON_MAX_16_MD, 0 };
+	static const ImWchar icons_ranges[] = { MD_RANGE_MIN, MD_RANGE_MAX, 0 };
 	ImFontConfig icons_config = {};
 	icons_config.MergeMode = true;
 	icons_config.PixelSnapH = true;
 	icons_config.GlyphOffset.y = 5;
 	icons_config.GlyphMinAdvanceX = GUI_FONT_SIZE;
-	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/FONT_ICON_FILE_NAME_MD).string().c_str(), GUI_FONT_SIZE * 1.5f, &icons_config, icons_ranges);
+	io.Fonts->AddFontFromFileTTF((RESOURCES_BASE_DIR/GUI_ICONS_FONT_PATH).string().c_str(), GUI_FONT_SIZE * 1.5f, &icons_config, icons_ranges);
 	io.Fonts->Build();
 
 	ImGui::SFML::UpdateFontTexture();
@@ -209,6 +126,8 @@ bool Initialize()
 
 	// Initializing tools
 	Tools.push_back(new BrushTool);
+	Tools.push_back(new BrailleTool);
+	Tools.push_back(new EraserTool);
 	CurrentTool = Tools[0];
 
 	return true;
@@ -252,10 +171,15 @@ void Update()
 		CurrentImageSprite.setPosition(sf::Vector2f(DragStartSpritePosition + delta));
 	}
 
-	auto last_pixel_coords = CurrentPixelCoords;
+	auto last_braille_coords = CurrentPixelCoords;
 	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
-	CurrentPixelCoords = WindowToPixelCoords(sf::Mouse::getPosition(RenderWindow));
-	if (Drawing && last_pixel_coords != CurrentPixelCoords && IsMouseInsideImage())
+					     
+	CurrentMouseCoords   = sf::Mouse::getPosition(RenderWindow);
+	CurrentImageCoords   = WindowToImageCoords  (CurrentMouseCoords);
+	CurrentPixelCoords   = WindowToPixelCoords  (CurrentMouseCoords);
+	CurrentBrailleCoords = WindowToBrailleCoords(CurrentMouseCoords);
+
+	if (Drawing && last_braille_coords != CurrentBrailleCoords && IsMouseInsideImage())
 		OnDraw(DrawingButton);
 }
 
@@ -279,15 +203,19 @@ void NewFile(int width, int height, OCIF::Color color)
 	UpdateTexture();
 	ResetImage();
 
-	CurrentImagePath = "Untitled";
+	CurrentImagePath = "Untitled.pic";
 	ImageLoaded = true;
+	ImageLoadedFromFile = false;
 }
 
 void LoadFile(const std::filesystem::path& path)
 {
+	PushMouseCursor(LoadingCursor);
+
 	try
 	{
 		CurrentImage.loadFromFile(path);
+
 		CurrentImage.rasterize(CurrentRasterizedImage, OpencomputersFont);
 		UpdateTexture();
 		ResetImage();
@@ -295,6 +223,7 @@ void LoadFile(const std::filesystem::path& path)
 		AddToRecentFilesList(path);
 
 		ImageLoaded = true;
+		ImageLoadedFromFile = true;
 		CurrentImagePath = path;
 	}
 
@@ -306,14 +235,22 @@ void LoadFile(const std::filesystem::path& path)
 		ShowMessageBox("Unable to load file", stream.str());
 		RemoveFromRecentFilesList(path);
 	}
+
+	PopMouseCursor();
 }
 
 void SaveFile(const std::filesystem::path& path)
 {
+	PushMouseCursor(LoadingCursor);
+
 	try
 	{
 		CurrentImage.saveToFile(path);
+		CurrentImagePath = path;
+		ImageLoadedFromFile = true;
 		AddToRecentFilesList(path);
+
+		std::cout << path.filename().string() << " was successfully saved" << std::endl;
 	}
 
 	catch (std::exception exc)
@@ -323,10 +260,14 @@ void SaveFile(const std::filesystem::path& path)
 
 		ShowMessageBox("Unable to save file", stream.str());
 	}
+
+	PopMouseCursor();
 }
 
 void ExportFile(const std::filesystem::path& path, float scale)
 {
+	PushMouseCursor(LoadingCursor);
+
 	sf::Texture texture;
 	texture.loadFromImage(CurrentRasterizedImage);
 
@@ -339,7 +280,11 @@ void ExportFile(const std::filesystem::path& path, float scale)
 	render_texture.create(bounds.width, bounds.height);
 	render_texture.draw(sprite);
 	render_texture.display();
-	render_texture.getTexture().copyToImage().saveToFile(path.string());
+
+	if (render_texture.getTexture().copyToImage().saveToFile(path.string()))
+		std::cout << path.filename().string() << " was successfully saved" << std::endl;
+
+	PopMouseCursor();
 }
 
 void MaximizeWindow()
@@ -354,6 +299,18 @@ void ShowMessageBox(std::string_view title, std::string_view message)
 	MessageBoxPopupTitle   = std::string(title) + "##msgbox";
 	MessageBoxPopupMessage = message;
 	MessageBoxPopupOpened  = true;
+}
+
+void PushMouseCursor(sf::Cursor& cursor)
+{
+	MouseCursorStack.push(&cursor);
+	RenderWindow.setMouseCursor(cursor);
+}
+
+void PopMouseCursor()
+{
+	MouseCursorStack.pop();
+	RenderWindow.setMouseCursor(*MouseCursorStack.top());
 }
 
 //===========================================
@@ -439,8 +396,8 @@ void OnMouseButtonPressed(sf::Mouse::Button button)
 			OnDragStart();
 			break;
 
-		case sf::Mouse::Right:
 		case sf::Mouse::Left:
+		case sf::Mouse::Right:
 			if (IsMouseInsideImage())
 				OnDrawStart(button);
 
@@ -457,6 +414,7 @@ void OnMouseButtonReleased(sf::Mouse::Button button)
 			break;
 
 		case sf::Mouse::Left:
+		case sf::Mouse::Right:
 			OnDrawStop();
 			break;
 	}
@@ -473,14 +431,14 @@ void OnDragStart()
 	DragStartMousePosition = sf::Mouse::getPosition(RenderWindow);
 	DragStartSpritePosition = sf::Vector2i(CurrentImageSprite.getPosition());
 
-	RenderWindow.setMouseCursor(MovingCursor);
+	PushMouseCursor(MovingCursor);
 }
 
 void OnDragStop()
 {
 	Dragging = false;
 
-	RenderWindow.setMouseCursor(DefaultCursor);
+	PopMouseCursor();
 }
 
 void OnExit()
@@ -515,8 +473,13 @@ void OnFileOpen()
 
 void OnFileSave()
 {
+	SaveFile(CurrentImagePath);
+}
+
+void OnFileSaveAs()
+{
 	static wchar_t buffer[BUFFSIZE] = L"";
-	CurrentImagePath.stem().wstring().copy(buffer, BUFFSIZE);
+	CurrentImagePath.wstring().copy(buffer, BUFFSIZE);
 
 	OPENFILENAMEW ofn = {};
 	ofn.lStructSize = sizeof(ofn);
@@ -526,13 +489,13 @@ void OnFileSave()
 	ofn.lpstrFileTitle = nullptr;
 	ofn.lpstrDefExt = L"pic";
 	ofn.lpstrFilter = L"All\0*.*\0" "OCIF (.pic)\0*.pic\0";
-	ofn.nFilterIndex = 1;
+	ofn.nFilterIndex = 2;
 	ofn.nMaxFileTitle = 0;
 	ofn.lpstrInitialDir = nullptr;
 	ofn.Flags = OFN_PATHMUSTEXIST | OFN_NOCHANGEDIR | OFN_OVERWRITEPROMPT;
 
 	if (GetSaveFileNameW(&ofn))
-		SaveFile(ofn.lpstrFile);
+		SaveFile(ofn.lpstrFile);	
 }
 
 void OnFileExport()
@@ -574,12 +537,24 @@ void OnDrawStop()
 
 void OnDraw(sf::Mouse::Button button)
 {
-	if (CurrentTool->onDraw(button, CurrentImage, OpencomputersFont, CurrentRasterizedImage, CurrentPixelCoords))
+	if (CurrentTool->onDraw(button))
 		UpdateTexture();
 }
 
 void OnKeyPressed(sf::Keyboard::Key key)
 {
+	for (const auto& tool: Tools)
+	{
+		if (tool->getHotkey() == key)
+		{
+			CurrentTool = tool;
+			return;
+		}
+	}
+
+	if (CurrentTool->onKeyPressed(key))
+		return;
+
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
 	{
 		OnKeyboardShortcut(key);
@@ -609,9 +584,12 @@ void OnKeyboardShortcut(sf::Keyboard::Key key)
 			OnFileOpen();
 			break;
 
-		// File -> Save
+		// File -> Save / Save as
 		case sf::Keyboard::S:
-			if (ImageLoaded)
+			if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || !ImageLoaded)
+				OnFileSaveAs();
+
+			else
 				OnFileSave();
 
 			break;
@@ -650,46 +628,7 @@ void RenderWorkspace()
 		RenderWindow.draw(rect);
 	}
 
-	if (IsMouseInsideImage())
-	{
-		rect.setFillColor(sf::Color(255, 255, 255, 100));
-
-		if (ShowCurrentPixelBorder)
-		{
-			auto sprite_scale = CurrentImageSprite.getScale();
-
-			rect.setOutlineColor(sf::Color::White);
-			rect.setOutlineThickness(1.f);
-			rect.setPosition(sf::Vector2f(PixelToWindowCoords(CurrentPixelCoords)));
-			rect.setSize(sf::Vector2f(sprite_scale.x * OCIF::HexFont::Glyph::DefaultWidth, sprite_scale.y * OCIF::HexFont::Glyph::DefaultHeight));
-
-			RenderWindow.draw(rect);
-		}
-
-		if (ShowCurrentPixelFrame)
-		{
-			auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
-
-			auto src_coords = PixelToWindowCoords(CurrentPixelCoords);
-			auto dst_coords = PixelToWindowCoords(CurrentPixelCoords + sf::Vector2i(1, 1));
-
-			rect.setOutlineThickness(0);
-
-			rect.setPosition(sprite_bounds.left, src_coords.y);
-			rect.setSize(sf::Vector2f(sprite_bounds.width, 1));
-			RenderWindow.draw(rect);
-
-			rect.setPosition(sprite_bounds.left, dst_coords.y);
-			RenderWindow.draw(rect);
-
-			rect.setPosition(src_coords.x, sprite_bounds.top);
-			rect.setSize(sf::Vector2f(1, sprite_bounds.height));
-			RenderWindow.draw(rect);
-
-			rect.setPosition(dst_coords.x, sprite_bounds.top);
-			RenderWindow.draw(rect);
-		}
-	}
+	CurrentTool->onRenderWorkspace();
 }
 
 //===========================================
@@ -711,14 +650,7 @@ void ProcessGUI()
 	if (ShowImGuiDemoWindow)
 		ImGui::ShowDemoWindow(&ShowImGuiDemoWindow);
 
-	static char buffer[BUFFSIZE] = "";
-	sprintf_s(buffer, "%s settings", CurrentTool->getName());
-	if (ImGui::Begin(buffer))
-	{
-		CurrentTool->processGUI();
-		ImGui::End();
-	}
-
+	CurrentTool->processGUI();
 	ImGui::SFML::Render(RenderWindow);
 }
 
@@ -750,13 +682,13 @@ void ProcessGUIMainMenuBar()
 
 void ProcessGUIFileMenu()
 {
-	if (ImGui::MenuItem(ICON_MD_CREATE_NEW_FOLDER " New", "^N"))
+	if (ImGui::MenuItem(MD_ICON_CREATE_NEW_FOLDER " New", "CTRL + N"))
 		OnFileNew();
 		
-	if (ImGui::MenuItem(ICON_MD_FOLDER_OPEN " Open", "^O"))
+	if (ImGui::MenuItem(MD_ICON_FOLDER_OPEN " Open", "CTRL + O"))
 		OnFileOpen();
 
-	if (ImGui::BeginMenu(ICON_MD_SCHEDULE " Open recent", !RecentFilesList.empty()))
+	if (ImGui::BeginMenu(MD_ICON_SCHEDULE " Open recent", !RecentFilesList.empty()))
 	{
 		ProcessGUIFileOpenRecentMenu();
 		ImGui::EndMenu();
@@ -764,24 +696,31 @@ void ProcessGUIFileMenu()
 
 	// Show tooltip if open recent item is disabled
 	if (RecentFilesList.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("You have not opened any file yet");
+		ImGui::SetTooltip("No recent files");
 
-	if (ImGui::MenuItem(ICON_MD_SAVE " Save", "^S", nullptr, ImageLoaded))
+	if (ImGui::MenuItem(MD_ICON_SAVE " Save", "CTRL + S", nullptr, ImageLoaded))
 		OnFileSave();
 
 	// Show tooltip if the save item is disabled
 	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("You have not loaded image yet");
+		ImGui::SetTooltip("Nothing to save");
 
-	if (ImGui::MenuItem(ICON_MD_DRIVE_FILE_MOVE " Export", "^E", nullptr, ImageLoaded))
+	if (ImGui::MenuItem(MD_ICON_SAVE_AS " Save as...", "CTRL + SHIFT + S", nullptr, ImageLoaded))
+		OnFileSaveAs();
+
+	// Show tooltip if the save as item is disabled
+	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("Nothing to save");
+
+	if (ImGui::MenuItem(MD_ICON_DRIVE_FILE_MOVE " Export", "CTRL + E", nullptr, ImageLoaded))
 		OnFileExport();
 
 	// Show tooltip if the export item is disabled
 	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
-		ImGui::SetTooltip("You have not loaded image yet");
+		ImGui::SetTooltip("Nothing to export");
 
 	ImGui::Separator();
-	if (ImGui::MenuItem(ICON_MD_CLOSE " Exit", "^W"))
+	if (ImGui::MenuItem(MD_ICON_CLOSE " Exit", "CTRL + W"))
 		OnExit();
 }
 
@@ -789,21 +728,23 @@ void ProcessGUIFileOpenRecentMenu()
 {
 	for (const auto& path: RecentFilesList)
 	{
-		// c++20 utf-8 strings are represented in char8_t instead of char
 		if (ImGui::MenuItem(reinterpret_cast<const char*>(path.filename().u8string().c_str())))
 		{
 			LoadFile(path);
 			break;
 		}
 	}
+
+	ImGui::Separator();
+
+	if (ImGui::MenuItem(MD_ICON_DELETE " Clear"))
+		ClearRecentFilesList();
 }
 
 void ProcessGUIViewMenu()
 {
 	ImGui::MenuItem("Tools window", nullptr, &ShowToolsWindow);
 	ImGui::MenuItem("Image border", nullptr, &ShowImageBorder);
-	ImGui::MenuItem("Pixel border", nullptr, &ShowCurrentPixelBorder);
-	ImGui::MenuItem("Pixel frame",  nullptr, &ShowCurrentPixelFrame);
 }
 
 void ProcessGUIDebugMenu()
@@ -889,13 +830,18 @@ void ProcessGUIExportPopup()
 
 void ProcessGUIToolsWindow()
 {
+	static char tool_name[64] = "";
 	if (ImGui::Begin("Tools", &ShowToolsWindow))
 	{
 		for (Tool* tool: Tools)
 		{
-			static char buffer[BUFFSIZE] = "";
-			sprintf_s(buffer, "%s %s", tool->getIcon(), tool->getName());
-			if (ImGui::Selectable(buffer, tool == CurrentTool))
+			if (tool->getHotkey() != sf::Keyboard::Unknown)
+				sprintf_s(tool_name, "[%c] %s %s", 'A' + static_cast<char>(tool->getHotkey() - sf::Keyboard::A), tool->getIcon(), tool->getName());
+
+			else
+				sprintf_s(tool_name, "     %s %s", tool->getIcon(), tool->getName());
+
+			if (ImGui::Selectable(tool_name, tool == CurrentTool))
 				CurrentTool = tool;
 		}
 	}
@@ -931,6 +877,12 @@ void RemoveFromRecentFilesList(const std::filesystem::path& path)
 	SaveRecentFilesList();
 }
 
+void ClearRecentFilesList()
+{
+	RecentFilesList.clear();
+	SaveRecentFilesList();
+}
+
 bool LoadRecentFilesList()
 {
 	std::ifstream stream(RECENT_FILES_LIST_PATH, std::ios::in);
@@ -950,6 +902,12 @@ bool LoadRecentFilesList()
 
 bool SaveRecentFilesList()
 {
+	if (RecentFilesList.empty())
+	{
+		std::filesystem::remove(RECENT_FILES_LIST_PATH);
+		return true;
+	}
+
 	std::ofstream stream(RECENT_FILES_LIST_PATH, std::ios::out);
 	if (!stream)
 	{
@@ -980,8 +938,50 @@ sf::Vector2i PixelToWindowCoords(const sf::Vector2i& pixel)
 	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
 
 	return sf::Vector2i(
-		sprite_bounds.left + (static_cast<float>(pixel.x) / CurrentImage.getWidth ()) * sprite_bounds.width,
-		sprite_bounds.top  + (static_cast<float>(pixel.y) / CurrentImage.getHeight()) * sprite_bounds.height
+		sprite_bounds.left + std::ceil((static_cast<float>(pixel.x) / CurrentImage.getWidth ()) * sprite_bounds.width),
+		sprite_bounds.top  + std::ceil((static_cast<float>(pixel.y) / CurrentImage.getHeight()) * sprite_bounds.height)
+	);
+}
+
+sf::Vector2i WindowToImageCoords(const sf::Vector2i& mouse)
+{
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+	auto image_size = CurrentRasterizedImage.getSize();
+
+	return sf::Vector2i(
+		((mouse.x - sprite_bounds.left) / sprite_bounds.width ) * image_size.x,
+		((mouse.y - sprite_bounds.top ) / sprite_bounds.height) * image_size.y
+	);
+}
+
+sf::Vector2i ImageToWindowCoords(const sf::Vector2i& coords)
+{
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+	auto image_size = CurrentRasterizedImage.getSize();
+
+	return sf::Vector2i(
+		sprite_bounds.left + (static_cast<float>(coords.x) / image_size.x) * sprite_bounds.width,
+		sprite_bounds.top  + (static_cast<float>(coords.y) / image_size.y) * sprite_bounds.height
+	);
+}
+
+sf::Vector2i WindowToBrailleCoords(const sf::Vector2i& window)
+{
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+
+	return sf::Vector2i(
+		((window.x - sprite_bounds.left) / sprite_bounds.width ) * CurrentImage.getWidth () * 2,
+		((window.y - sprite_bounds.top ) / sprite_bounds.height) * CurrentImage.getHeight() * 4
+	);
+}
+
+sf::Vector2i BrailleToWindowCoords(const sf::Vector2i& braille)
+{
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+
+	return sf::Vector2i(
+		sprite_bounds.left + (static_cast<float>(braille.x) / (CurrentImage.getWidth () * 2)) * sprite_bounds.width,
+		sprite_bounds.top  + (static_cast<float>(braille.y) / (CurrentImage.getHeight() * 4)) * sprite_bounds.height
 	);
 }
 

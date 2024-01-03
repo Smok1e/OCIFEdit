@@ -151,16 +151,22 @@
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">true</ExcludedFromBuild>
     </ClCompile>
-    <ClCompile Include="Source\Tools\Brush.cpp" />
+    <ClCompile Include="Source\Tools\BrailleTool.cpp" />
+    <ClCompile Include="Source\Tools\BrushTool.cpp" />
+    <ClCompile Include="Source\Tools\EraserTool.cpp" />
+    <ClCompile Include="Source\Tools\Tool.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="Include\IconsMaterialDesign.hpp" />
+    <ClInclude Include="Include\Main.hpp" />
+    <ClInclude Include="Include\MaterialDesignIcons.hpp" />
     <ClInclude Include="Include\OCIF\Braille.hpp" />
     <ClInclude Include="Include\OCIF\Color.hpp" />
     <ClInclude Include="Include\OCIF\HexFont.hpp" />
     <ClInclude Include="Include\OCIF\Image.hpp" />
     <ClInclude Include="Include\OCIF\IO.hpp" />
-    <ClInclude Include="Include\Tools\Brush.hpp" />
+    <ClInclude Include="Include\Tools\BrailleTool.hpp" />
+    <ClInclude Include="Include\Tools\BrushTool.hpp" />
+    <ClInclude Include="Include\Tools\EraserTool.hpp" />
     <ClInclude Include="Include\Tools\Tool.hpp" />
   </ItemGroup>
   <ItemGroup>
