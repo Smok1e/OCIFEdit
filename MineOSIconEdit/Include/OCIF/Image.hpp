@@ -24,6 +24,8 @@ struct Pixel
 	Color    background { 0   };
 	Color    foreground { 0   };
 	double   alpha      { 1.0 };
+
+	static Pixel Transparent;
 };
 
 // Class that holds unrasterized OCIF image data
@@ -37,6 +39,8 @@ public:
 	size_t getHeight() const;
 
 	void resize(size_t new_width, size_t new_height);
+	void resizeAndKeepContent(size_t new_width, size_t new_height, const Pixel& fill = Pixel::Transparent);
+
 	void clear(const Pixel& pixel);
 
 	void         set(size_t x, size_t y, const Pixel& pixel);

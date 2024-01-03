@@ -23,5 +23,6 @@
 #define MD_ICON_GRID_ON           "\xEE\x8F\xAC" // U+E3EC
 #define MD_ICON_DRAW              "\xEE\x9D\x86" // U+E746
 #define MD_ICON_INK_ERASER        "\xEE\x9B\x90" // U+E6D0
+#define MD_ICON_RESIZE            "\xEF\x9C\x87" // U+F707
 
 //===========================================

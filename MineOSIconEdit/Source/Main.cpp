@@ -32,7 +32,7 @@ sf::Sprite                        CurrentImageSprite;
 std::filesystem::path             CurrentImagePath;
 float                             CurrentImageScale = 1.f;
 
-bool                              ShowImageBorder     = false;
+bool                              ShowImageBorder     = true;
 bool                              ShowImGuiDemoWindow = false;
 
 bool                              Dragging = false;
@@ -55,6 +55,7 @@ std::string                       MessageBoxPopupTitle   = "";
 std::string                       MessageBoxPopupMessage = "";
 bool                              ExportPopupOpened      = false;
 std::filesystem::path             ExportPath             = "";
+extern bool                       ResizeImagePopupOpened = false;
 
 //===========================================
 
@@ -183,7 +184,7 @@ void Update()
 		OnDraw(DrawingButton);
 }
 
-void NewFile(int width, int height, OCIF::Color color)
+void NewFile(int width, int height, OCIF::Color color, bool create_transparent)
 {
 	if (width < 1 || height < 1)
 	{
@@ -196,7 +197,7 @@ void NewFile(int width, int height, OCIF::Color color)
 		' ',
 		color,
 		0x000000,
-		0.0
+		static_cast<double>(create_transparent)
 	});
 
 	CurrentImage.rasterize(CurrentRasterizedImage, OpencomputersFont);
@@ -285,6 +286,19 @@ void ExportFile(const std::filesystem::path& path, float scale)
 		std::cout << path.filename().string() << " was successfully saved" << std::endl;
 
 	PopMouseCursor();
+}
+
+void ResizeImage(size_t new_width, size_t new_height, OCIF::Color fill_color, bool fill_transparent)
+{
+	CurrentImage.resizeAndKeepContent(new_width, new_height, {
+		' ',
+		fill_color,
+		0,
+		static_cast<double>(fill_transparent)
+	});
+
+	CurrentImage.rasterize(CurrentRasterizedImage, OpencomputersFont);
+	UpdateTexture();
 }
 
 void MaximizeWindow()
@@ -523,6 +537,11 @@ void OnFileExport()
 	}
 }
 
+void OnImageResize()
+{
+	ResizeImagePopupOpened = true;
+}
+
 void OnDrawStart(sf::Mouse::Button button)
 {
 	Drawing = true;
@@ -564,8 +583,10 @@ void OnKeyPressed(sf::Keyboard::Key key)
 	switch (key)
 	{
 		case sf::Keyboard::Escape:
-			NewFilePopupOpened = false;
-			MessageBoxPopupOpened = false;
+			NewFilePopupOpened     = false;
+			MessageBoxPopupOpened  = false;
+			ExportPopupOpened      = false;
+			ResizeImagePopupOpened = false;
 			break;
 	}
 }
@@ -670,6 +691,12 @@ void ProcessGUIMainMenuBar()
 			ImGui::EndMenu();
 		}
 
+		if (ImGui::BeginMenu("Image"))
+		{
+			ProcessGUIImageMenu();
+			ImGui::EndMenu();
+		}
+
 		if (ImGui::BeginMenu("Debug"))
 		{
 			ProcessGUIDebugMenu();
@@ -747,6 +774,16 @@ void ProcessGUIViewMenu()
 	ImGui::MenuItem("Image border", nullptr, &ShowImageBorder);
 }
 
+void ProcessGUIImageMenu()
+{
+	if (ImGui::MenuItem(MD_ICON_RESIZE " Resize", nullptr, nullptr, ImageLoaded))
+		OnImageResize();
+
+	// Show tooltip if the resize as item is disabled
+	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+		ImGui::SetTooltip("Nothing to resize");
+}
+
 void ProcessGUIDebugMenu()
 {
 	if (ImGui::MenuItem("Show ImGui demo"))
@@ -783,7 +820,16 @@ void ProcessGUIPopups()
 	CenterNextWindow();
 	if (ImGui::BeginPopupModal("Export image", &ExportPopupOpened, ImGuiWindowFlags_AlwaysAutoResize))
 	{
-		ProcessGUIExportPopup();
+		ProcessGUIFileExportPopup();
+		ImGui::EndPopup();
+	}
+
+	if (ResizeImagePopupOpened)
+		ImGui::OpenPopup("Resize image");
+
+	if (ImGui::BeginPopupModal("Resize image", &ResizeImagePopupOpened, ImGuiWindowFlags_AlwaysAutoResize))
+	{
+		ProcessGUIImageResizePopup();
 		ImGui::EndPopup();
 	}
 }
@@ -794,11 +840,16 @@ void ProcessGUIFileNewPopup()
 	ImGui::InputInt2("Image size", size);
 
 	static float color[3] = { 1.f, 1.f, 1.f };
-	ImGui::ColorPicker3("Fill color", color);
+	static bool create_transparent = true;
+
+	if (!create_transparent)
+		ImGui::ColorPicker3("Fill color", color);
+
+	ImGui::Checkbox("Create transparent image", &create_transparent);
 
 	if (ImGui::Button("Ok"))
 	{
-		NewFile(size[0], size[1], OCIF::NormalizeColor(OCIF::To24BitColor(color)));
+		NewFile(size[0], size[1], OCIF::NormalizeColor(OCIF::To24BitColor(color)), create_transparent);
 		NewFilePopupOpened = false;
 	}
 }
@@ -811,7 +862,7 @@ void ProcessGUIMessageBoxPopup()
 		MessageBoxPopupOpened = false;
 }
 
-void ProcessGUIExportPopup()
+void ProcessGUIFileExportPopup()
 {
 	static float scale = 1.f;
 	ImGui::SliderFloat("Output scale", &scale, .1f, 10.f);
@@ -823,6 +874,26 @@ void ProcessGUIExportPopup()
 	{
 		ExportFile(ExportPath, scale);
 		ExportPopupOpened = false;
+	}
+}
+
+void ProcessGUIImageResizePopup()
+{
+	static int size[2] = { 8, 4 };
+	ImGui::InputInt2("Image size", size);
+
+	static float color[3] = { 1.f, 1.f, 1.f };
+	static bool create_transparent = true;
+
+	if (!create_transparent)
+		ImGui::ColorPicker3("Fill color", color);
+
+	ImGui::Checkbox("No fill", &create_transparent);
+
+	if (ImGui::Button("Ok"))
+	{
+		ResizeImage(size[0], size[1], OCIF::NormalizeColor(OCIF::To24BitColor(color)), create_transparent);
+		ResizeImagePopupOpened = false;
 	}
 }
 

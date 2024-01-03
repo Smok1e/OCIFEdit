@@ -24,6 +24,7 @@ protected:
 	sf::Color m_current_foreground { sf::Color::Black };
 	bool m_transparent_background { false };
 	bool m_show_crosshair { true };
+	bool m_show_hovered_pixel { true };
 
 };
 

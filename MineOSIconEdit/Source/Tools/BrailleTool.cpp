@@ -32,6 +32,7 @@ bool BrailleTool::onDraw(sf::Mouse::Button button)
 		{
 			m_current_background = OCIF::ToSFColor(pixel.background);
 			m_current_foreground = OCIF::ToSFColor(pixel.foreground);
+			m_transparent_background = (pixel.alpha > 0.0);
 		}
 	}
 
@@ -44,8 +45,8 @@ bool BrailleTool::onDraw(sf::Mouse::Button button)
 			button == sf::Mouse::Left
 		);
 
-		pixel.foreground = OCIF::To24BitColor(m_current_foreground);
-		pixel.background = OCIF::To24BitColor(m_current_background);
+		pixel.foreground = OCIF::NormalizeColor(OCIF::To24BitColor(m_current_foreground));
+		pixel.background = OCIF::NormalizeColor(OCIF::To24BitColor(m_current_background));
 		pixel.alpha = m_transparent_background;
 
 		CurrentImage.rasterizePixel(
@@ -78,39 +79,55 @@ void BrailleTool::onRenderWorkspace()
 		rect.setSize(sf::Vector2f(50, 25));
 		RenderWindow.draw(rect);
 
-		rect.setFillColor(m_current_background);
-		rect.setPosition(sf::Vector2f(CurrentMouseCoords) + sf::Vector2f(20, 45));
-		RenderWindow.draw(rect);
+		if (!m_transparent_background)
+		{
+			rect.setFillColor(m_current_background);
+			rect.setPosition(sf::Vector2f(CurrentMouseCoords) + sf::Vector2f(20, 45));
+			RenderWindow.draw(rect);
+		}
 	}
 
-	else if (m_show_crosshair && IsMouseInsideImage())
+	else if (IsMouseInsideImage())
 	{	
 		auto sprite_scale  = CurrentImageSprite.getScale();
 		auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
 
-		rect.setFillColor(sf::Color(255, 255, 255, 100));
-		rect.setPosition(sf::Vector2f(BrailleToWindowCoords(CurrentBrailleCoords) + sf::Vector2i(1, 1)));
-		rect.setSize(sf::Vector2f(sprite_scale.x * 4, sprite_scale.y * 4));
-		RenderWindow.draw(rect);
+		if (m_show_crosshair)
+		{
+			rect.setFillColor(sf::Color(255, 255, 255, 100));
+			rect.setPosition(sf::Vector2f(BrailleToWindowCoords(CurrentBrailleCoords) + sf::Vector2i(1, 1)));
+			rect.setSize(sf::Vector2f(sprite_scale.x * 4, sprite_scale.y * 4));
+			RenderWindow.draw(rect);
 
-		auto src_coords = BrailleToWindowCoords(CurrentBrailleCoords);
-		auto dst_coords = BrailleToWindowCoords(CurrentBrailleCoords + sf::Vector2i(1, 1));
+			auto src_coords = BrailleToWindowCoords(CurrentBrailleCoords);
+			auto dst_coords = BrailleToWindowCoords(CurrentBrailleCoords + sf::Vector2i(1, 1));
 
-		rect.setOutlineThickness(0);
+			rect.setOutlineThickness(0);
 
-		rect.setPosition(sprite_bounds.left, src_coords.y);
-		rect.setSize(sf::Vector2f(sprite_bounds.width, 1));
-		RenderWindow.draw(rect);
+			rect.setPosition(sprite_bounds.left, src_coords.y);
+			rect.setSize(sf::Vector2f(sprite_bounds.width, 1));
+			RenderWindow.draw(rect);
 
-		rect.setPosition(sprite_bounds.left, dst_coords.y);
-		RenderWindow.draw(rect);
+			rect.setPosition(sprite_bounds.left, dst_coords.y);
+			RenderWindow.draw(rect);
 
-		rect.setPosition(src_coords.x, sprite_bounds.top);
-		rect.setSize(sf::Vector2f(1, sprite_bounds.height));
-		RenderWindow.draw(rect);
+			rect.setPosition(src_coords.x, sprite_bounds.top);
+			rect.setSize(sf::Vector2f(1, sprite_bounds.height));
+			RenderWindow.draw(rect);
 
-		rect.setPosition(dst_coords.x, sprite_bounds.top);
-		RenderWindow.draw(rect);
+			rect.setPosition(dst_coords.x, sprite_bounds.top);
+			RenderWindow.draw(rect);
+		}
+
+		if (m_show_hovered_pixel)
+		{
+			rect.setFillColor(sf::Color::Transparent);
+			rect.setOutlineColor(sf::Color::White);
+			rect.setOutlineThickness(1.f);
+			rect.setSize(sf::Vector2f(sprite_scale.x * OCIF::HexFont::Glyph::DefaultWidth, sprite_scale.y * OCIF::HexFont::Glyph::DefaultHeight));
+			rect.setPosition(sf::Vector2f(PixelToWindowCoords(CurrentPixelCoords)));
+			RenderWindow.draw(rect);
+		}
 	}
 }
 
@@ -119,6 +136,7 @@ void BrailleTool::processGUI()
 	if (ImGui::Begin("Braille settings"))
 	{
 		ImGui::Checkbox("Show crosshair", &m_show_crosshair);
+		ImGui::Checkbox("Show hovered pixel", &m_show_hovered_pixel);
 		ImGui::Separator();
 
 		ImGui::Checkbox("Transparent background", &m_transparent_background);

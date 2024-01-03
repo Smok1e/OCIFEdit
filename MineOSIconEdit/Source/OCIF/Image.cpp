@@ -13,6 +13,15 @@ namespace OCIF
 
 //===========================================
 
+Pixel Pixel::Transparent = {
+	' ',
+	0,
+	0,
+	1.0
+};
+
+//===========================================
+
 Image::Image(size_t width, size_t height)
 {
 	resize(width, height);
@@ -30,8 +39,24 @@ size_t Image::getHeight() const
 
 void Image::resize(size_t new_width, size_t new_height)
 {
+	m_data.clear();
 	m_data.resize(new_width * new_height);
-	m_width = new_width;
+	m_width  = new_width;
+	m_height = new_height;
+}
+
+void Image::resizeAndKeepContent(size_t new_width, size_t new_height, const Pixel& fill /*= Pixel::Transparent*/)
+{
+	auto old_data = m_data;
+	m_data.resize(new_width * new_height);
+
+	for (size_t x = 0; x < new_width; x++)
+		for (size_t y = 0; y < new_height; y++)
+			m_data[y*new_width + x] = (x < m_width && y < m_height)
+				? old_data[y*m_width + x]
+				: fill;
+
+	m_width  = new_width;
 	m_height = new_height;
 }
 

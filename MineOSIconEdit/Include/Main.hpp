@@ -91,6 +91,7 @@ extern std::string                       MessageBoxPopupTitle;
 extern std::string                       MessageBoxPopupMessage;
 extern bool                              ExportPopupOpened;
 extern std::filesystem::path             ExportPath;
+extern bool                              ResizeImagePopupOpened;
 
 //===========================================
 
@@ -99,10 +100,11 @@ void StartLoop();
 void Cleanup();
 
 void Update();
-void NewFile(int width, int height, OCIF::Color color);
+void NewFile(int width, int height, OCIF::Color color, bool create_transparent);
 void LoadFile(const std::filesystem::path& path);
 void SaveFile(const std::filesystem::path& path);
 void ExportFile(const std::filesystem::path& path, float scale);
+void ResizeImage(size_t new_width, size_t new_height, OCIF::Color fill_color, bool fill_transparent);
 void MaximizeWindow();
 void ShowMessageBox(std::string_view title, std::string_view message);
 void PushMouseCursor(sf::Cursor& cursor);
@@ -117,20 +119,21 @@ void SetImageScale(float scale);
 void OnEvent(const sf::Event& event);
 void OnMouseButtonPressed(sf::Mouse::Button button);
 void OnMouseButtonReleased(sf::Mouse::Button button);
+void OnKeyPressed(sf::Keyboard::Key key);
+void OnKeyboardShortcut(sf::Keyboard::Key key);
 void OnZoom(int direction);
 void OnDragStart();
 void OnDragStop();
-void OnKeyPressed(sf::Keyboard::Key key);
-void OnKeyboardShortcut(sf::Keyboard::Key key);
+void OnDrawStart(sf::Mouse::Button button);
+void OnDrawStop();
+void OnDraw(sf::Mouse::Button button);
 void OnExit();
 void OnFileNew();
 void OnFileOpen();
 void OnFileSave();
 void OnFileSaveAs();
 void OnFileExport();
-void OnDrawStart(sf::Mouse::Button button);
-void OnDrawStop();
-void OnDraw(sf::Mouse::Button button);
+void OnImageResize();
 
 void RenderWorkspace();
 
@@ -140,12 +143,14 @@ void ProcessGUIMainMenuBar();
 void ProcessGUIFileMenu();
 void ProcessGUIFileOpenRecentMenu();
 void ProcessGUIViewMenu();
+void ProcessGUIImageMenu();
 void ProcessGUIDebugMenu();
 
 void ProcessGUIPopups();
 void ProcessGUIFileNewPopup();
 void ProcessGUIMessageBoxPopup();
-void ProcessGUIExportPopup();
+void ProcessGUIFileExportPopup();
+void ProcessGUIImageResizePopup();
 
 void ProcessGUIToolsWindow();
 
