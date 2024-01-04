@@ -100,7 +100,7 @@ bool Initialize()
 		RenderWindow.setIcon(icon.getSize().x, icon.getSize().y, icon.getPixelsPtr());
 
 	PushMouseCursor(DefaultCursor);
-	MaximizeWindow();
+	// MaximizeWindow();
 
 	// Dark window titlebar
 	DwmSetWindowAttribute(

@@ -111,6 +111,12 @@
         }
         "Entry"
         {
+        "MsmKey" = "8:_84C4279992CF1C6DC6E9E13681C6F987"
+        "OwnerKey" = "8:_E37632E4F61946018A1EA28FBB7A63C6"
+        "MsmSig" = "8:_UNDEFINED"
+        }
+        "Entry"
+        {
         "MsmKey" = "8:_9050C6889ECFC83170ABACFED9539A37"
         "OwnerKey" = "8:_E37632E4F61946018A1EA28FBB7A63C6"
         "MsmSig" = "8:_UNDEFINED"
@@ -574,6 +580,26 @@
             "IsDependency" = "11:TRUE"
             "IsolateTo" = "8:"
             }
+            "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_84C4279992CF1C6DC6E9E13681C6F987"
+            {
+            "SourcePath" = "8:dwmapi.dll"
+            "TargetName" = "8:dwmapi.dll"
+            "Tag" = "8:"
+            "Folder" = "8:_D6FCD672CD6C4A5F87D1243EABDC5057"
+            "Condition" = "8:"
+            "Transitive" = "11:FALSE"
+            "Vital" = "11:TRUE"
+            "ReadOnly" = "11:FALSE"
+            "Hidden" = "11:FALSE"
+            "System" = "11:FALSE"
+            "Permanent" = "11:FALSE"
+            "SharedLegacy" = "11:FALSE"
+            "PackageAs" = "3:1"
+            "Register" = "3:1"
+            "Exclude" = "11:FALSE"
+            "IsDependency" = "11:TRUE"
+            "IsolateTo" = "8:"
+            }
             "{1FB2D0AE-D3B9-43D4-B9DD-F88EC61E35DE}:_9050C6889ECFC83170ABACFED9539A37"
             {
             "SourcePath" = "8:MSVCP140.dll"
@@ -943,15 +969,15 @@
         {
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:OCIFEdit"
-        "ProductCode" = "8:{F49AD165-F100-4B4D-B3E9-C01300B64896}"
-        "PackageCode" = "8:{64C68959-AD2D-4E72-AEED-DFC16C848DFF}"
+        "ProductCode" = "8:{DD02C39A-8687-4ED4-AE37-D927B39CEA26}"
+        "PackageCode" = "8:{15D532EA-37E9-4567-9564-8B93152F96D1}"
         "UpgradeCode" = "8:{CDFD3BEE-1AD4-4739-94E4-342F6089C58E}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"
         "RemovePreviousVersions" = "11:TRUE"
         "DetectNewerInstalledVersion" = "11:TRUE"
         "InstallAllUsers" = "11:FALSE"
-        "ProductVersion" = "8:1.0.0"
+        "ProductVersion" = "8:1.0.1"
         "Manufacturer" = "8:Smok1e"
         "ARPHELPTELEPHONE" = "8:"
         "ARPHELPLINK" = "8:"
