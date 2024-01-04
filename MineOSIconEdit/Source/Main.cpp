@@ -2,17 +2,17 @@
 
 //===========================================
 
-const std::filesystem::path RESOURCES_BASE_DIR      = "Resources";                 // Resources directory path
-const std::filesystem::path GUI_FONT_PATH           = "CascadiaCode.ttf";          // Unicode font used to display text in GUI
-const std::filesystem::path GUI_ICONS_FONT_PATH     = "MaterialIcons-Regular.ttf"; // Font used to display icons in GUI
-const float                 GUI_FONT_SIZE           = 18.f;                        // GUI text size
-const std::filesystem::path OC_FONT_PATH            = "font.hex";                  // Opencomputers font in their own hex format
-const std::filesystem::path RECENT_FILES_LIST_PATH  = "recent.txt";                // Cached list of recently open files
-const size_t                RECENT_FILES_LIST_LIMIT = 10;                          // Limit of recently open files
-const sf::Color             BACKGROUND_COLOR        = sf::Color(24, 24, 24);       // Window background color
-const sf::Vector2u          WINDOW_INITIAL_SIZE     = sf::Vector2u(1000, 1000);    // Render window size when it is initially opened
-const char*                 WINDOW_TITLE            = "OCIF edit";                 // Render window title
-const std::filesystem::path WINDOW_ICON_PATH        = "Icon.png";                  // Render window icon
+const std::filesystem::path RESOURCES_BASE_DIR      = "Resources";                       // Resources directory path
+const std::filesystem::path GUI_FONT_PATH           = "Fonts/CascadiaCode.ttf";          // Unicode font used to display text in GUI
+const std::filesystem::path GUI_ICONS_FONT_PATH     = "Fonts/MaterialIcons-Regular.ttf"; // Font used to display icons in GUI
+const float                 GUI_FONT_SIZE           = 18.f;                              // GUI text size
+const std::filesystem::path OC_FONT_PATH            = "Fonts/font.hex";                  // Opencomputers font in their own hex format
+const std::filesystem::path RECENT_FILES_LIST_PATH  = "recent.txt";                      // Cached list of recently open files
+const size_t                RECENT_FILES_LIST_LIMIT = 10;                                // Limit of recently open files
+const sf::Color             BACKGROUND_COLOR        = sf::Color(24, 24, 24);             // Window background color
+const sf::Vector2u          WINDOW_INITIAL_SIZE     = sf::Vector2u(1000, 1000);          // Render window size when it is initially opened
+const char*                 WINDOW_TITLE            = "OCIF edit";                       // Render window title
+const std::filesystem::path WINDOW_ICON_PATH        = "Icon.png";                        // Render window icon
 
 OCIF::HexFont                     OpencomputersFont;
 std::deque<std::filesystem::path> RecentFilesList;
@@ -22,6 +22,7 @@ sf::Cursor                        MovingCursor;
 sf::Cursor                        LoadingCursor;
 std::stack<sf::Cursor*>           MouseCursorStack;
 sf::Clock                         DeltaClock;
+sf::Shader                        BackgroundGridShader;
 
 bool                              ImageLoaded = false;
 bool                              ImageLoadedFromFile = false;
@@ -32,7 +33,8 @@ sf::Sprite                        CurrentImageSprite;
 std::filesystem::path             CurrentImagePath;
 float                             CurrentImageScale = 1.f;
 
-bool                              ShowImageBorder     = true;
+bool                              ShowImageBorder     = false;
+bool                              ShowBackgroundGrid  = true;
 bool                              ShowImGuiDemoWindow = false;
 
 bool                              Dragging = false;
@@ -61,10 +63,9 @@ extern bool                       ResizeImagePopupOpened = false;
 
 int main()
 {
-	if (!Initialize())
-		return 0;
+	if (Initialize())
+		StartLoop();
 
-	StartLoop();
 	Cleanup();
 }
 
@@ -84,6 +85,10 @@ bool Initialize()
 	DefaultCursor.loadFromSystem(sf::Cursor::Arrow  );
 	MovingCursor.loadFromSystem (sf::Cursor::SizeAll);
 	LoadingCursor.loadFromSystem(sf::Cursor::Wait   );
+
+	// Shaders
+	if (!LoadShaders())
+		return false;
 
 	// Initializing window
 	RenderWindow.create(sf::VideoMode(WINDOW_INITIAL_SIZE.x, WINDOW_INITIAL_SIZE.y), WINDOW_TITLE);
@@ -152,6 +157,14 @@ void StartLoop()
 
 		RenderWindow.display();
 	}
+}
+
+bool LoadShaders()
+{
+	if (!BackgroundGridShader.loadFromFile((RESOURCES_BASE_DIR/"Shaders/BackgroundGrid.frag").string(), sf::Shader::Fragment))
+		return false;
+
+	return true;
 }
 
 void Cleanup()
@@ -577,11 +590,14 @@ void OnKeyboardShortcut(sf::Keyboard::Key key)
 
 		// File -> Save / Save as
 		case sf::Keyboard::S:
-			if (sf::Keyboard::isKeyPressed(sf::Keyboard::LShift) || !ImageLoaded)
-				OnFileSaveAs();
+			if (ImageLoaded)
+			{
+				if (!ImageLoadedFromFile || sf::Keyboard::isKeyPressed(sf::Keyboard::LShift))
+					OnFileSaveAs();
 
-			else
-				OnFileSave();
+				else
+					OnFileSave();
+			}
 
 			break;
 
@@ -603,21 +619,28 @@ void OnKeyboardShortcut(sf::Keyboard::Key key)
 
 void RenderWorkspace()
 {
-	RenderWindow.draw(CurrentImageSprite);
-
 	static sf::RectangleShape rect;
+	auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
+	rect.setPosition(sprite_bounds.left, sprite_bounds.top);
+	rect.setSize(sf::Vector2f(sprite_bounds.width, sprite_bounds.height));
+
 	if (ShowImageBorder)
 	{
-		auto sprite_bounds = CurrentImageSprite.getGlobalBounds();
-
 		rect.setFillColor(sf::Color::Transparent);
 		rect.setOutlineColor(sf::Color::White);
 		rect.setOutlineThickness(1.f);
-		rect.setPosition(sprite_bounds.left, sprite_bounds.top);
-		rect.setSize(sf::Vector2f(sprite_bounds.width, sprite_bounds.height));
 
 		RenderWindow.draw(rect);
 	}
+
+	if (ShowBackgroundGrid)
+	{
+		rect.setOutlineThickness(0.f);
+		BackgroundGridShader.setUniform("rect_position", rect.getPosition());
+		RenderWindow.draw(rect, &BackgroundGridShader);
+	}
+
+	RenderWindow.draw(CurrentImageSprite);
 
 	CurrentTool->onRenderWorkspace();
 }
@@ -695,21 +718,21 @@ void ProcessGUIFileMenu()
 	if (RecentFilesList.empty() && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("No recent files");
 
-	if (ImGui::MenuItem(MD_ICON_SAVE " Save", "CTRL + S", nullptr, ImageLoaded))
+	if (ImGui::MenuItem(MD_ICON_SAVE " Save", "CTRL + S", nullptr, ImageLoadedFromFile))
 		OnFileSave();
 
 	// Show tooltip if the save item is disabled
 	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("Nothing to save");
 
-	if (ImGui::MenuItem(MD_ICON_SAVE_AS " Save as...", "CTRL + SHIFT + S", nullptr, ImageLoaded))
+	if (ImGui::MenuItem(MD_ICON_SAVE_AS " Save as...", "CTRL + SHIFT + S", nullptr, ImageLoadedFromFile))
 		OnFileSaveAs();
 
 	// Show tooltip if the save as item is disabled
 	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("Nothing to save");
 
-	if (ImGui::MenuItem(MD_ICON_DRIVE_FILE_MOVE " Export", "CTRL + E", nullptr, ImageLoaded))
+	if (ImGui::MenuItem(MD_ICON_DRIVE_FILE_MOVE " Export", "CTRL + E", nullptr, ImageLoadedFromFile))
 		OnFileExport();
 
 	// Show tooltip if the export item is disabled
@@ -740,8 +763,9 @@ void ProcessGUIFileOpenRecentMenu()
 
 void ProcessGUIViewMenu()
 {
-	ImGui::MenuItem("Tools window", nullptr, &ShowToolsWindow);
-	ImGui::MenuItem("Image border", nullptr, &ShowImageBorder);
+	ImGui::MenuItem("Tools window",    nullptr, &ShowToolsWindow   );
+	ImGui::MenuItem("Background grid", nullptr, &ShowBackgroundGrid);
+	ImGui::MenuItem("Image border",    nullptr, &ShowImageBorder   );
 }
 
 void ProcessGUIImageMenu()
@@ -758,6 +782,9 @@ void ProcessGUIDebugMenu()
 {
 	if (ImGui::MenuItem("Show ImGui demo"))
 		ShowImGuiDemoWindow = true;
+
+	if (ImGui::MenuItem("Reload shaders"))
+		LoadShaders();
 }
 
 //===========================================

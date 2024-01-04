@@ -28,8 +28,8 @@ public:
 	virtual void onTypingDone();
 
 protected:
-	sf::Color m_current_background { sf::Color::White };
-	sf::Color m_current_foreground { sf::Color::Black };
+	sf::Color m_current_background { sf::Color::Black };
+	sf::Color m_current_foreground { sf::Color::White };
 	bool m_transparent_background { false };
 
 	bool m_typing { false };

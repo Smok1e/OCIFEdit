@@ -28,12 +28,11 @@ bool BrailleTool::onDraw()
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
 	{
-		if (m_drawing_button == sf::Mouse::Left)
-		{
-			m_current_background = OCIF::ToSFColor(pixel.background);
-			m_current_foreground = OCIF::ToSFColor(pixel.foreground);
-			m_transparent_background = (pixel.alpha > 0.0);
-		}
+		(
+			m_drawing_button == sf::Mouse::Left
+				? m_current_foreground
+				: m_current_background
+		) = CurrentRasterizedImage.getPixel(CurrentImageCoords.x, CurrentImageCoords.y);
 	}
 
 	else
@@ -65,26 +64,14 @@ bool BrailleTool::onDraw()
 void BrailleTool::onRenderWorkspace()
 {
 	static sf::RectangleShape rect;
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) && sf::Mouse::isButtonPressed(sf::Mouse::Left))
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt) && m_drawing)
 	{
 		rect.setPosition(sf::Vector2f(CurrentMouseCoords) + sf::Vector2f(20, 20));
-		rect.setFillColor(sf::Color::Transparent);
+		rect.setFillColor(m_drawing_button == sf::Mouse::Left? m_current_foreground: m_current_background);
 		rect.setSize(sf::Vector2f(50, 50));
 		rect.setOutlineColor(sf::Color::White);
 		rect.setOutlineThickness(1.f);
 		RenderWindow.draw(rect);
-
-		rect.setOutlineThickness(0.f);
-		rect.setFillColor(m_current_foreground);
-		rect.setSize(sf::Vector2f(50, 25));
-		RenderWindow.draw(rect);
-
-		if (!m_transparent_background)
-		{
-			rect.setFillColor(m_current_background);
-			rect.setPosition(sf::Vector2f(CurrentMouseCoords) + sf::Vector2f(20, 45));
-			RenderWindow.draw(rect);
-		}
 	}
 
 	else if (IsMouseInsideImage())

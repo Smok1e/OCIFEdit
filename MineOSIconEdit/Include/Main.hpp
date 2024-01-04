@@ -1,5 +1,8 @@
 #pragma once
 
+// Fuck conversion warnings
+#pragma warning(disable: 4244)
+
 //===========================================
 
 // Tell Windows.h to not define MIN and MAX macros to be compatiable with SFML
@@ -57,6 +60,7 @@ extern sf::Cursor                        MovingCursor;
 extern sf::Cursor                        LoadingCursor;
 extern std::stack<sf::Cursor*>           MouseCursorStack;
 extern sf::Clock                         DeltaClock;
+extern sf::Shader                        BackgroundGridShader;
 
 extern bool                              ImageLoaded;
 extern bool                              ImageLoadedFromFile;
@@ -95,6 +99,7 @@ extern bool                              ResizeImagePopupOpened;
 //===========================================
 
 bool Initialize();
+bool LoadShaders();
 void StartLoop();
 void Cleanup();
 

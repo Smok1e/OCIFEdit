@@ -21,7 +21,8 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <None Include="Resources\font.hex" />
+    <None Include="Resources\Fonts\font.hex" />
+    <None Include="Resources\Shaders\BackgroundGrid.frag" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="Source\Main.cpp">
@@ -106,7 +107,7 @@
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
-    <Font Include="Resources\CascadiaCode.ttf" />
+    <Font Include="Resources\Fonts\CascadiaCode.ttf" />
     <Font Include="Resources\fa-solid-900.ttf" />
   </ItemGroup>
 </Project>

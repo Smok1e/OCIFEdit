@@ -136,7 +136,9 @@ bool TextTool::onEvent(const sf::Event& event)
 					break;
 
 				case sf::Keyboard::X:
-					std::swap(m_current_background, m_current_foreground);
+					if (!m_typing)
+						std::swap(m_current_background, m_current_foreground);
+
 					break;
 			}
 
@@ -184,7 +186,7 @@ bool TextTool::onMouseButtonPressed(sf::Mouse::Button button)
 	if (m_typing)
 	{
 		onTypingDone();
-		return true;
+		return false;
 	}
 
 	return Tool::onMouseButtonPressed(button);

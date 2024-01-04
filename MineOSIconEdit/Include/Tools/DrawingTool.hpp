@@ -19,8 +19,8 @@ public:
 	virtual bool onDraw() = 0;
 
 protected:
-	bool              m_drawing { false };
-	sf::Mouse::Button m_drawing_button;
+	bool              m_drawing        { false };
+	sf::Mouse::Button m_drawing_button { sf::Mouse::Left };
 
 };
 
