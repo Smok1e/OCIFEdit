@@ -1,9 +1,0 @@
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Lua.app\Icon.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Pioneer.app\Icon.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Calculator.app\Icon.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Symbols.app\Icon.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Pioneer.app\Images\CueOff.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Pioneer.app\Images\TempoSlider.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Pioneer.app\Images\PlayOff.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Pioneer.app\Images\Jog3.pic
-C:\Users\smok1e\Documents\Ocelot\3b8bf027-4886-41b7-9ad8-a8a58788efbf\Applications\Pioneer.app\Images\Background.pic
