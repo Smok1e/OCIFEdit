@@ -22,13 +22,13 @@ sf::Keyboard::Key BrailleTool::getHotkey() const
 	return sf::Keyboard::F;
 }
 
-bool BrailleTool::onDraw(sf::Mouse::Button button)
+bool BrailleTool::onDraw()
 {
 	auto& pixel = CurrentImage.get(CurrentPixelCoords.x, CurrentPixelCoords.y);
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
 	{
-		if (button == sf::Mouse::Left)
+		if (m_drawing_button == sf::Mouse::Left)
 		{
 			m_current_background = OCIF::ToSFColor(pixel.background);
 			m_current_foreground = OCIF::ToSFColor(pixel.foreground);
@@ -42,7 +42,7 @@ bool BrailleTool::onDraw(sf::Mouse::Button button)
 			pixel.character, 
 			CurrentBrailleCoords.x % 2,
 			CurrentBrailleCoords.y % 4,
-			button == sf::Mouse::Left
+			m_drawing_button == sf::Mouse::Left
 		);
 
 		pixel.foreground = OCIF::NormalizeColor(OCIF::To24BitColor(m_current_foreground));
@@ -153,17 +153,24 @@ void BrailleTool::processGUI()
 	}
 }
 
-bool BrailleTool::onKeyPressed(sf::Keyboard::Key key)
+bool BrailleTool::onEvent(const sf::Event& event)
 {
-	switch (key)
+	switch (event.type)
 	{
-		case sf::Keyboard::X:
-			std::swap(m_current_background, m_current_foreground);
-			return true;
-			break;
+		case sf::Event::KeyPressed:
+		{
+			switch (event.key.code)
+			{
+				case sf::Keyboard::X:
+					std::swap(m_current_background, m_current_foreground);
+
+					return true;
+					break;
+			}
+		}
 	}
 
-	return false;
+	return DrawingTool::onEvent(event);
 }
 
 //===========================================

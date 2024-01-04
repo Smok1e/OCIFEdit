@@ -29,6 +29,7 @@
 #include <Tools/BrushTool.hpp>
 #include <Tools/BrailleTool.hpp>
 #include <Tools/EraserTool.hpp>
+#include <Tools/TextTool.hpp>
 
 //===========================================
 
@@ -77,8 +78,6 @@ extern sf::Vector2i                      DragStartSpritePosition;
 extern bool								 ShowToolsWindow;
 extern std::vector<Tool*>				 Tools;
 extern Tool*							 CurrentTool;
-extern bool								 Drawing;
-extern sf::Mouse::Button				 DrawingButton;
 extern sf::Vector2i                      CurrentMouseCoords;
 extern sf::Vector2i                      CurrentImageCoords; 
 extern sf::Vector2i						 CurrentPixelCoords;
@@ -124,9 +123,6 @@ void OnKeyboardShortcut(sf::Keyboard::Key key);
 void OnZoom(int direction);
 void OnDragStart();
 void OnDragStop();
-void OnDrawStart(sf::Mouse::Button button);
-void OnDrawStop();
-void OnDraw(sf::Mouse::Button button);
 void OnExit();
 void OnFileNew();
 void OnFileOpen();

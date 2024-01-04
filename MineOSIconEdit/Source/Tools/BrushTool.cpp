@@ -21,9 +21,9 @@ sf::Keyboard::Key BrushTool::getHotkey() const
 	return sf::Keyboard::B;
 }
 
-bool BrushTool::onDraw(sf::Mouse::Button button)
+bool BrushTool::onDraw()
 {
-	if (button == sf::Mouse::Left)
+	if (m_drawing_button == sf::Mouse::Left)
 	{
 		if (sf::Keyboard::isKeyPressed(sf::Keyboard::LAlt))
 			m_current_color = CurrentRasterizedImage.getPixel(CurrentImageCoords.x, CurrentImageCoords.y);

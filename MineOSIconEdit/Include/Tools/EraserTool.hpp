@@ -1,6 +1,5 @@
 #pragma once
-
-#include "BrushTool.hpp"
+#include <Tools/BrushTool.hpp>
 
 //===========================================
 
@@ -14,7 +13,7 @@ public:
 	virtual const char* getName() const override;
 	virtual sf::Keyboard::Key getHotkey() const;
 
-	virtual bool onDraw(sf::Mouse::Button button) override;
+	virtual bool onDraw() override;
 	virtual void processGUI() override;
 
 };

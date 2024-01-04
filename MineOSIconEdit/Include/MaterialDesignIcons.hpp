@@ -24,5 +24,6 @@
 #define MD_ICON_DRAW              "\xEE\x9D\x86" // U+E746
 #define MD_ICON_INK_ERASER        "\xEE\x9B\x90" // U+E6D0
 #define MD_ICON_RESIZE            "\xEF\x9C\x87" // U+F707
+#define MD_ICON_TEXT_FIELDS       "\xEE\x89\xA2" // U+E262
 
 //===========================================

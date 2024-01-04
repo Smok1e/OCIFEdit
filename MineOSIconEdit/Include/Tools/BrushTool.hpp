@@ -1,26 +1,26 @@
 #pragma once
-
-#include "Tool.hpp"
+#include <Tools/DrawingTool.hpp>
 
 //===========================================
 
 // The brush
-class BrushTool: public Tool
+class BrushTool: public DrawingTool
 {
 public:
-	using Tool::Tool;
+	using DrawingTool::DrawingTool;
 
 	virtual const char* getIcon() const override;
 	virtual const char* getName() const override;
 	virtual sf::Keyboard::Key getHotkey() const;
 
-	virtual bool onDraw(sf::Mouse::Button button) override;
+	virtual bool onDraw() override;
+
 	virtual void onRenderWorkspace() override;
 	virtual void processGUI() override;
 
 protected:
 	sf::Color m_current_color { sf::Color::White };
-	bool m_show_crosshair { true };
+	bool     m_show_crosshair { true };
 
 };
 

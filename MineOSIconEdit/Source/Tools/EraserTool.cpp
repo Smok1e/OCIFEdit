@@ -21,9 +21,9 @@ sf::Keyboard::Key EraserTool::getHotkey() const
 	return sf::Keyboard::E;
 }
 
-bool EraserTool::onDraw(sf::Mouse::Button button)
+bool EraserTool::onDraw()
 {
-	if (button == sf::Mouse::Left)
+	if (m_drawing_button == sf::Mouse::Left)
 	{
 		auto& pixel = CurrentImage.get(CurrentPixelCoords.x, CurrentPixelCoords.y);
 		pixel.character = ' ';
@@ -44,6 +44,7 @@ bool EraserTool::onDraw(sf::Mouse::Button button)
 
 void EraserTool::processGUI()
 {
+
 }
 
 //===========================================

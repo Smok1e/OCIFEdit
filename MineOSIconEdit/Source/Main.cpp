@@ -129,6 +129,7 @@ bool Initialize()
 	Tools.push_back(new BrushTool);
 	Tools.push_back(new BrailleTool);
 	Tools.push_back(new EraserTool);
+	Tools.push_back(new TextTool);
 	CurrentTool = Tools[0];
 
 	return true;
@@ -180,8 +181,7 @@ void Update()
 	CurrentPixelCoords   = WindowToPixelCoords  (CurrentMouseCoords);
 	CurrentBrailleCoords = WindowToBrailleCoords(CurrentMouseCoords);
 
-	if (Drawing && last_braille_coords != CurrentBrailleCoords && IsMouseInsideImage())
-		OnDraw(DrawingButton);
+	CurrentTool->onUpdate();
 }
 
 void NewFile(int width, int height, OCIF::Color color, bool create_transparent)
@@ -368,8 +368,11 @@ void SetImageScale(float scale)
 void OnEvent(const sf::Event& event)
 {
 	auto& io = ImGui::GetIO();
-
 	ImGui::SFML::ProcessEvent(event);
+
+	if (CurrentTool->onEvent(event))
+		return;
+
 	switch (event.type)
 	{
 		case sf::Event::Closed:
@@ -409,13 +412,6 @@ void OnMouseButtonPressed(sf::Mouse::Button button)
 		case sf::Mouse::Middle:
 			OnDragStart();
 			break;
-
-		case sf::Mouse::Left:
-		case sf::Mouse::Right:
-			if (IsMouseInsideImage())
-				OnDrawStart(button);
-
-			break;
 	}
 }
 
@@ -425,11 +421,6 @@ void OnMouseButtonReleased(sf::Mouse::Button button)
 	{
 		case sf::Mouse::Middle:
 			OnDragStop();
-			break;
-
-		case sf::Mouse::Left:
-		case sf::Mouse::Right:
-			OnDrawStop();
 			break;
 	}
 }
@@ -542,24 +533,6 @@ void OnImageResize()
 	ResizeImagePopupOpened = true;
 }
 
-void OnDrawStart(sf::Mouse::Button button)
-{
-	Drawing = true;
-	DrawingButton = button;
-	OnDraw(button);
-}
-
-void OnDrawStop()
-{
-	Drawing = false;
-}
-
-void OnDraw(sf::Mouse::Button button)
-{
-	if (CurrentTool->onDraw(button))
-		UpdateTexture();
-}
-
 void OnKeyPressed(sf::Keyboard::Key key)
 {
 	for (const auto& tool: Tools)
@@ -570,9 +543,6 @@ void OnKeyPressed(sf::Keyboard::Key key)
 			return;
 		}
 	}
-
-	if (CurrentTool->onKeyPressed(key))
-		return;
 
 	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
 	{
