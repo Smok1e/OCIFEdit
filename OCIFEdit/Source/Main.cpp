@@ -103,12 +103,12 @@ bool Initialize()
 	// MaximizeWindow();
 
 	// Dark window titlebar
-	DwmSetWindowAttribute(
-		RenderWindow.getSystemHandle(),
-		DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
-		&UseDarkWindowMode, 
-		sizeof(UseDarkWindowMode)
-	);
+	// DwmSetWindowAttribute(
+	// 	RenderWindow.getSystemHandle(),
+	// 	DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
+	// 	&UseDarkWindowMode, 
+	// 	sizeof(UseDarkWindowMode)
+	// );
 
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);
