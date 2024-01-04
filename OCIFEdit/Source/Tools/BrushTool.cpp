@@ -102,7 +102,7 @@ void BrushTool::processGUI()
 		ImGui::Separator();
 
 		static float color[3] = {};
-		if (ImGui::ColorPicker3("Color", OCIF::ToFloat3Color(m_current_color, color)))
+		if (ImGui::ColorEdit3("Color", OCIF::ToFloat3Color(m_current_color, color), ImGuiColorEditFlags_NoInputs))
 			m_current_color = OCIF::ToSFColor(color);
 
 		ImGui::End();

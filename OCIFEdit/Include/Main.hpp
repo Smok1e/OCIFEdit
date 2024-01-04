@@ -18,6 +18,7 @@
 #include <string>
 
 #include <Windows.h>
+#include <dwmapi.h>
 
 #include <SFML/Graphics.hpp>
 
@@ -55,6 +56,7 @@ extern const std::filesystem::path WINDOW_ICON_PATH;
 extern OCIF::HexFont                     OpencomputersFont;
 extern std::deque<std::filesystem::path> RecentFilesList;
 extern sf::RenderWindow                  RenderWindow;
+extern BOOL                              UseDarkWindowMode;
 extern sf::Cursor                        DefaultCursor;
 extern sf::Cursor                        MovingCursor;
 extern sf::Cursor                        LoadingCursor;

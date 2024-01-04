@@ -35,7 +35,7 @@ void TextTool::onRenderWorkspace()
 
 	if (m_typing)
 	{
-		rect.setPosition(sf::Vector2f(PixelToWindowCoords(m_typing_position + sf::Vector2i(m_text.length(), 0))));
+		rect.setPosition(sf::Vector2f(PixelToWindowCoords(m_cursor_position)));
 		rect.setFillColor(sf::Color::Transparent);
 		RenderWindow.draw(rect);
 	}
@@ -55,65 +55,72 @@ void TextTool::processGUI()
 		ImGui::Checkbox("Transparent background", &m_transparent_background);
 
 		static float foreground[3] = {};
-		if (ImGui::ColorPicker3("Foreground", OCIF::ToFloat3Color(m_current_foreground, foreground)))
+		if (ImGui::ColorEdit3("Foreground color", OCIF::ToFloat3Color(m_current_foreground, foreground), ImGuiColorEditFlags_NoInputs))
 			m_current_foreground = OCIF::ToSFColor(foreground);
 
 		static float background[3] = {};
-		if (ImGui::ColorPicker3("Background", OCIF::ToFloat3Color(m_current_background, background)))
+		if (ImGui::ColorEdit3("Background color", OCIF::ToFloat3Color(m_current_background, background), ImGuiColorEditFlags_NoInputs))
 			m_current_background = OCIF::ToSFColor(background);
 
 		ImGui::End();
 	}
 }
 
-void TextTool::appendCharacter(uint32_t codepoint)
+//===========================================
+
+void TextTool::setCharacter(const sf::Vector2i& position, uint32_t codepoint)
 {
-	if (m_typing_position.x + m_text.length() < CurrentImage.getWidth())
+	CurrentImage.set(
+		position.x,
+		position.y,
+		{
+			codepoint,
+			OCIF::NormalizeColor(OCIF::To24BitColor(m_current_background)),
+			OCIF::NormalizeColor(OCIF::To24BitColor(m_current_foreground)),
+			static_cast<double>(m_transparent_background)
+		}
+	);
+
+	CurrentImage.rasterizePixel(
+		CurrentRasterizedImage,
+		OpencomputersFont,
+		position.x,
+		position.y
+	);
+
+	UpdateTexture();
+}
+
+void TextTool::putCharacter(uint32_t codepoint)
+{
+	if (m_cursor_position.x < CurrentImage.getWidth())
+		setCharacter(m_cursor_position, codepoint), m_cursor_position.x++;
+}
+
+bool TextTool::moveCursor(const sf::Vector2i& offset)
+{
+	if (!m_typing)
+		return false;
+
+	auto new_position = m_cursor_position + offset;
+	if (
+		   new_position.x >= 0 && new_position.x < CurrentImage.getWidth () 
+		&& new_position.y >= 0 && new_position.y < CurrentImage.getHeight()
+	)
 	{
-		unsigned x = m_typing_position.x + m_text.length();
-		unsigned y = m_typing_position.y;
-
-		CurrentImage.set(
-			x,
-			y,
-			{
-				codepoint,
-				OCIF::NormalizeColor(OCIF::To24BitColor(m_current_background)),
-				OCIF::NormalizeColor(OCIF::To24BitColor(m_current_foreground)),
-				static_cast<double>(m_transparent_background)
-			}
-		);
-
-		CurrentImage.rasterizePixel(CurrentRasterizedImage, OpencomputersFont, x, y);
-		UpdateTexture();
-
-		m_text.push_back(codepoint);
+		m_cursor_position = new_position;
+		return true;
 	}
+
+	return false;
 }
 
 void TextTool::eraseCharacter()
 {
-	if (!m_text.empty())
-	{
-		unsigned x = m_typing_position.x + m_text.length() - 1;
-		unsigned y = m_typing_position.y;
+	if (!moveCursor({ -1, 0 }))
+		return;
 
-		CurrentImage.set(
-			x,
-			y,
-			{
-				' ',
-				OCIF::NormalizeColor(OCIF::To24BitColor(m_current_background)),
-				OCIF::NormalizeColor(OCIF::To24BitColor(m_current_foreground)),
-				static_cast<double>(m_transparent_background)
-			}
-		);
-
-		CurrentImage.rasterizePixel(CurrentRasterizedImage, OpencomputersFont, x, y);
-		UpdateTexture();
-
-		m_text.erase(m_text.end() - 1);
-	}
+	setCharacter(m_cursor_position, ' ');
 }
 
 //===========================================
@@ -127,12 +134,17 @@ bool TextTool::onEvent(const sf::Event& event)
 			{
 				case sf::Keyboard::Escape:
 				case sf::Keyboard::Enter:
-					if (m_typing)
-					{
-						onTypingDone();
-						return true;
-					}
+					onTypingDone();
+					break;
 
+				// Navigation
+				case sf::Keyboard::Left:  moveCursor({ -1,  0 }); break;
+				case sf::Keyboard::Right: moveCursor({  1,  0 }); break;
+				case sf::Keyboard::Up:    moveCursor({  0, -1 }); break;
+				case sf::Keyboard::Down:  moveCursor({  0,  1 }); break;
+
+				case sf::Keyboard::Backspace:
+					eraseCharacter();
 					break;
 
 				case sf::Keyboard::X:
@@ -164,19 +176,8 @@ bool TextTool::onTextEntered(uint32_t codepoint)
 	if (!m_typing)
 		return false;
 
-	switch (codepoint)
-	{
-		// Backspace
-		case '\b':
-			eraseCharacter();
-			break;
-
-		default:
-			if (std::iswprint(codepoint))
-				appendCharacter(codepoint);
-
-			break;
-	}
+	if (std::iswprint(codepoint))
+		putCharacter(codepoint);
 
 	return true;
 }
@@ -210,8 +211,7 @@ bool TextTool::onMouseButtonPressedInsideImage(sf::Mouse::Button button)
 
 void TextTool::onTypingStarted()
 {
-	m_typing_position = CurrentPixelCoords;
-	m_text = L"";
+	m_cursor_position = CurrentPixelCoords;
 	m_typing = true;
 }
 

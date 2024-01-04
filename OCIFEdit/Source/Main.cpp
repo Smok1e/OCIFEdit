@@ -17,6 +17,7 @@ const std::filesystem::path WINDOW_ICON_PATH        = "Icon.png";               
 OCIF::HexFont                     OpencomputersFont;
 std::deque<std::filesystem::path> RecentFilesList;
 sf::RenderWindow                  RenderWindow;
+BOOL                              UseDarkWindowMode = true;
 sf::Cursor                        DefaultCursor;
 sf::Cursor                        MovingCursor;
 sf::Cursor                        LoadingCursor;
@@ -100,6 +101,14 @@ bool Initialize()
 
 	PushMouseCursor(DefaultCursor);
 	MaximizeWindow();
+
+	// Dark window titlebar
+	DwmSetWindowAttribute(
+		RenderWindow.getSystemHandle(),
+		DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
+		&UseDarkWindowMode, 
+		sizeof(UseDarkWindowMode)
+	);
 
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);

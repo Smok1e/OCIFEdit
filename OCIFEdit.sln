@@ -5,6 +5,8 @@ VisualStudioVersion = 17.6.33829.357
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "OCIFEdit", "OCIFEdit\OCIFEdit.vcxproj", "{7D94182B-A5D9-481C-929F-7A302C5743CB}"
 EndProject
+Project("{54435603-DBB4-11D2-8724-00A0C9A8B90C}") = "Setup", "Setup\Setup.vdproj", "{0FF5A2F7-89A2-4F01-8135-A1C690B9EAA2}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -21,6 +23,10 @@ Global
 		{7D94182B-A5D9-481C-929F-7A302C5743CB}.Release|x64.Build.0 = Release|x64
 		{7D94182B-A5D9-481C-929F-7A302C5743CB}.Release|x86.ActiveCfg = Release|Win32
 		{7D94182B-A5D9-481C-929F-7A302C5743CB}.Release|x86.Build.0 = Release|Win32
+		{0FF5A2F7-89A2-4F01-8135-A1C690B9EAA2}.Debug|x64.ActiveCfg = Debug
+		{0FF5A2F7-89A2-4F01-8135-A1C690B9EAA2}.Debug|x86.ActiveCfg = Debug
+		{0FF5A2F7-89A2-4F01-8135-A1C690B9EAA2}.Release|x64.ActiveCfg = Release
+		{0FF5A2F7-89A2-4F01-8135-A1C690B9EAA2}.Release|x86.ActiveCfg = Release
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

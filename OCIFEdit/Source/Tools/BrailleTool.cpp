@@ -129,11 +129,11 @@ void BrailleTool::processGUI()
 		ImGui::Checkbox("Transparent background", &m_transparent_background);
 
 		static float foreground[3] = {};
-		if (ImGui::ColorPicker3("Foreground", OCIF::ToFloat3Color(m_current_foreground, foreground)))
+		if (ImGui::ColorEdit3("Foreground color", OCIF::ToFloat3Color(m_current_foreground, foreground), ImGuiColorEditFlags_NoInputs))
 			m_current_foreground = OCIF::ToSFColor(foreground);
 
 		static float background[3] = {};
-		if (ImGui::ColorPicker3("Background", OCIF::ToFloat3Color(m_current_background, background)))
+		if (ImGui::ColorEdit3("Background color", OCIF::ToFloat3Color(m_current_background, background), ImGuiColorEditFlags_NoInputs))
 			m_current_background = OCIF::ToSFColor(background);
 
 		ImGui::End();

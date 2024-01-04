@@ -16,14 +16,16 @@ public:
 	virtual void onRenderWorkspace() override;
 	virtual void processGUI() override;
 
-	virtual void appendCharacter(uint32_t codepoint);
+	virtual void setCharacter(const sf::Vector2i& position, uint32_t codepoint);
+	virtual void putCharacter(uint32_t codepoint);
+	virtual bool moveCursor(const sf::Vector2i& offset);
 	virtual void eraseCharacter();
 
 	virtual bool onEvent(const sf::Event& event);
 	virtual bool onTextEntered(uint32_t codepoint);
 	virtual bool onMouseButtonPressed(sf::Mouse::Button button) override;
 	virtual bool onMouseButtonPressedInsideImage(sf::Mouse::Button button) override;
-
+	
 	virtual void onTypingStarted();
 	virtual void onTypingDone();
 
@@ -33,8 +35,7 @@ protected:
 	bool m_transparent_background { false };
 
 	bool m_typing { false };
-	sf::Vector2i m_typing_position;
-	std::wstring m_text;
+	sf::Vector2i m_cursor_position;
 
 };
 
