@@ -26,6 +26,7 @@
 #include <imgui-SFML.h>
 
 #include <MaterialDesignIcons.hpp>
+#include <DebugLog.hpp>
 
 #include <OCIF/HexFont.hpp>
 #include <OCIF/Image.hpp>
@@ -63,6 +64,7 @@ extern sf::Cursor                        LoadingCursor;
 extern std::stack<sf::Cursor*>           MouseCursorStack;
 extern sf::Clock                         DeltaClock;
 extern sf::Shader                        BackgroundGridShader;
+extern DebugLog                          Log;
 
 extern bool                              ImageLoaded;
 extern bool                              ImageLoadedFromFile;
@@ -75,6 +77,7 @@ extern float                             CurrentImageScale;
 
 extern bool                              ShowImageBorder;
 extern bool                              ShowImGuiDemoWindow;
+extern bool                              ShowDebugLog;
 
 extern bool                              Dragging;
 extern sf::Vector2i                      DragStartMousePosition;

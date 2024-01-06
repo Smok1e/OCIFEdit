@@ -64,6 +64,9 @@
     <ClCompile Include="Source\Tools\DrawingTool.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="Source\DebugLog.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Include\OCIF\Braille.hpp">
@@ -106,6 +109,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="resource.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="Include\DebugLog.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
