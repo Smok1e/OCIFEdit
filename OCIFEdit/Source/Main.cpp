@@ -114,19 +114,19 @@ bool Initialize()
 	// OS version before trying to set this attribute
 
 	OSVERSIONINFOA version = {};
+	version.dwOSVersionInfoSize = sizeof(version);
+
 	GetVersionExA(&version);
+	Log.info("Windows build number: {}", version.dwBuildNumber);
 
-	Log.info("Windows version: {}.{}", (int) version.dwMajorVersion, (int) version.dwMinorVersion);
-	Log.info("Build number: {}", (int) version.dwBuildNumber);
-
-	/*
-	DwmSetWindowAttribute(
-	 	RenderWindow.getSystemHandle(),
-	 	DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
-	 	&UseDarkWindowMode, 
-	 	sizeof(UseDarkWindowMode)
-	);
-	*/
+	if (version.dwBuildNumber >= 22000)
+		DwmSetWindowAttribute
+		(
+	 		RenderWindow.getSystemHandle(),
+	 		DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
+	 		&UseDarkWindowMode, 
+	 		sizeof(UseDarkWindowMode)
+		);
 
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);
