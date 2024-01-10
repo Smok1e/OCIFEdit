@@ -1,4 +1,7 @@
 ﻿#include <Main.hpp>
+#include <Version>
+
+#pragma warning(disable: 4996)
 
 //===========================================
 
@@ -24,6 +27,7 @@ sf::Cursor                        LoadingCursor;
 std::stack<sf::Cursor*>           MouseCursorStack;
 sf::Clock                         DeltaClock;
 sf::Shader                        BackgroundGridShader;
+DebugLog                          Log;
 
 bool                              ImageLoaded = false;
 bool                              ImageLoadedFromFile = false;
@@ -37,6 +41,7 @@ float                             CurrentImageScale = 1.f;
 bool                              ShowImageBorder     = false;
 bool                              ShowBackgroundGrid  = true;
 bool                              ShowImGuiDemoWindow = false;
+bool                              ShowDebugLog        = false;
 
 bool                              Dragging = false;
 sf::Vector2i                      DragStartMousePosition;
@@ -103,12 +108,25 @@ bool Initialize()
 	// MaximizeWindow();
 
 	// Dark window titlebar
-	DwmSetWindowAttribute(
-		RenderWindow.getSystemHandle(),
-		DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
-		&UseDarkWindowMode, 
-		sizeof(UseDarkWindowMode)
-	);
+	 
+	// The DWMWA_USE_IMMERSIVE_DARK_MODE option can only be used
+	// starting from Windows 11 Build 22000, so we should check
+	// OS version before trying to set this attribute
+
+	OSVERSIONINFOA version = {};
+	version.dwOSVersionInfoSize = sizeof(version);
+
+	GetVersionExA(&version);
+	Log.info("Windows build number: {}", version.dwBuildNumber);
+
+	if (version.dwBuildNumber >= 22000)
+		DwmSetWindowAttribute
+		(
+	 		RenderWindow.getSystemHandle(),
+	 		DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
+	 		&UseDarkWindowMode, 
+	 		sizeof(UseDarkWindowMode)
+		);
 
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);
@@ -273,7 +291,7 @@ void SaveFile(const std::filesystem::path& path)
 		ImageLoadedFromFile = true;
 		AddToRecentFilesList(path);
 
-		std::cout << path.filename().string() << " was successfully saved" << std::endl;
+		Log.info("{} was successfully saved", path.filename().string());
 	}
 
 	catch (std::exception exc)
@@ -305,7 +323,7 @@ void ExportFile(const std::filesystem::path& path, float scale)
 	render_texture.display();
 
 	if (render_texture.getTexture().copyToImage().saveToFile(path.string()))
-		std::cout << path.filename().string() << " was successfully saved" << std::endl;
+		Log.info("{} was successfully saved", path.filename().string());
 
 	PopMouseCursor();
 }
@@ -422,7 +440,9 @@ void OnEvent(const sf::Event& event)
 			break;
 
 		case sf::Event::MouseWheelMoved:
-			OnZoom(event.mouseWheel.delta);
+			if (!io.WantCaptureMouse)
+				OnZoom(event.mouseWheel.delta);
+
 			break;
 	}
 }
@@ -673,6 +693,9 @@ void ProcessGUI()
 	if (ShowImGuiDemoWindow)
 		ImGui::ShowDemoWindow(&ShowImGuiDemoWindow);
 
+	if (ShowDebugLog)
+		Log.draw(&ShowDebugLog);
+
 	CurrentTool->processGUI();
 	ImGui::SFML::Render(RenderWindow);
 }
@@ -775,6 +798,7 @@ void ProcessGUIViewMenu()
 	ImGui::MenuItem("Tools window",    nullptr, &ShowToolsWindow   );
 	ImGui::MenuItem("Background grid", nullptr, &ShowBackgroundGrid);
 	ImGui::MenuItem("Image border",    nullptr, &ShowImageBorder   );
+	ImGui::MenuItem("Debug log",       nullptr, &ShowDebugLog      );
 }
 
 void ProcessGUIImageMenu()
@@ -988,7 +1012,7 @@ bool SaveRecentFilesList()
 	std::ofstream stream(RECENT_FILES_LIST_PATH, std::ios::out);
 	if (!stream)
 	{
-		std::cerr << "Unable to save recent files list" << std::endl;
+		Log.warn("Unable to save recent files list");
 		return false;
 	}
 

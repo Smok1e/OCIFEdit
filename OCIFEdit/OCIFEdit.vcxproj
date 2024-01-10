@@ -150,6 +150,7 @@
     </None>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="Source\DebugLog.cpp" />
     <ClCompile Include="Source\Main.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">false</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|x64'">false</ExcludedFromBuild>
@@ -176,6 +177,7 @@
     <ClCompile Include="Source\Tools\Tool.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="Include\DebugLog.hpp" />
     <ClInclude Include="Include\Main.hpp" />
     <ClInclude Include="Include\MaterialDesignIcons.hpp" />
     <ClInclude Include="Include\OCIF\Braille.hpp" />
@@ -208,6 +210,9 @@
   </ItemGroup>
   <ItemGroup>
     <ResourceCompile Include="OCIFEdit.rc" />
+  </ItemGroup>
+  <ItemGroup>
+    <Manifest Include="OCIFEdit.manifest" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
