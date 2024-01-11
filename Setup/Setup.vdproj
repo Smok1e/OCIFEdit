@@ -994,7 +994,7 @@
         "Name" = "8:Microsoft Visual Studio"
         "ProductName" = "8:OCIFEdit"
         "ProductCode" = "8:{FFC8FDAE-D0B2-4C2B-B274-465C8FFE13C4}"
-        "PackageCode" = "8:{B8531C63-C786-4ECB-9BC5-D9FC0B200B4F}"
+        "PackageCode" = "8:{C113D7D2-A219-48D1-87D3-5161E9774990}"
         "UpgradeCode" = "8:{CDFD3BEE-1AD4-4739-94E4-342F6089C58E}"
         "AspNetVersion" = "8:2.0.50727.0"
         "RestartWWWService" = "11:FALSE"

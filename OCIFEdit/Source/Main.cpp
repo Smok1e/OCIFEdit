@@ -1,7 +1,8 @@
 ﻿#include <Main.hpp>
 #include <Version>
 
-#pragma warning(disable: 4996)
+#pragma warning(disable: 4996 )
+#pragma warning(disable: 28159)
 
 //===========================================
 
@@ -107,26 +108,7 @@ bool Initialize()
 	PushMouseCursor(DefaultCursor);
 	// MaximizeWindow();
 
-	// Dark window titlebar
-	 
-	// The DWMWA_USE_IMMERSIVE_DARK_MODE option can only be used
-	// starting from Windows 11 Build 22000, so we should check
-	// OS version before trying to set this attribute
-
-	OSVERSIONINFOA version = {};
-	version.dwOSVersionInfoSize = sizeof(version);
-
-	GetVersionExA(&version);
-	Log.info("Windows build number: {}", version.dwBuildNumber);
-
-	if (version.dwBuildNumber >= 22000)
-		DwmSetWindowAttribute
-		(
-	 		RenderWindow.getSystemHandle(),
-	 		DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
-	 		&UseDarkWindowMode, 
-	 		sizeof(UseDarkWindowMode)
-		);
+	TryEnableDarkTitlebar();
 
 	// ImGui
 	ImGui::SFML::Init(RenderWindow);
@@ -189,9 +171,64 @@ void StartLoop()
 bool LoadShaders()
 {
 	if (!BackgroundGridShader.loadFromFile((RESOURCES_BASE_DIR/"Shaders/BackgroundGrid.frag").string(), sf::Shader::Fragment))
+	{
+		Log.warn("Background grid shader loading failed");
 		return false;
+	}
 
 	return true;
+}
+
+bool TryEnableDarkTitlebar()
+{
+	// The DWMWA_USE_IMMERSIVE_DARK_MODE option can only be used
+	// starting from Windows 11 Build 22000, so we should check
+	// OS version before trying to set this attribute
+	Log.info("Checking the OS version...");
+
+	OSVERSIONINFOA version = {};
+	version.dwOSVersionInfoSize = sizeof(version);
+
+	GetVersionExA(&version);
+	Log.info("Windows build number: {}", version.dwBuildNumber);
+
+	if (version.dwBuildNumber < 22000)
+		return false;
+
+	Log.info("Trying to enable immersive dark mode...");
+
+	// In Windows 11 dwmapi imports function called 'NtDCompositionSetBlurredWallpaperSurface'
+	// from win32u.dll, but in windows build < 22000 win32u.dll does not have such function.
+	// This is why i am loading dwmapi.dll dynamically in case that os build number >= 22000.
+	// Otherwise this will cause an error when running on Windows 10.
+	HMODULE dwmapi = LoadLibraryA("dwmapi.dll");
+	if (!dwmapi)
+	{
+		Log.error("Unable to dynamically load dwmapi.dll, error code 0x{:08X}", GetLastError());
+		return false;
+	}
+
+	auto __DwmSetWindowAttribute = reinterpret_cast<HRESULT (__stdcall*)(HWND, DWORD, LPCVOID, DWORD)>(
+		GetProcAddress(dwmapi, "DwmSetWindowAttribute")
+	);
+
+	if (__DwmSetWindowAttribute)
+	{
+		__DwmSetWindowAttribute
+		(
+	 		RenderWindow.getSystemHandle(),
+	 		DWMWINDOWATTRIBUTE::DWMWA_USE_IMMERSIVE_DARK_MODE, 
+	 		&UseDarkWindowMode, 
+	 		sizeof(UseDarkWindowMode)
+		);
+
+		Log.info("Immersive dark mode enabled");
+	}
+		
+	else Log.error("Dwmapi.dll was successfully loaded, but procedure 'DwmSetWindowAttribute' not found in the DLL");
+
+	FreeLibrary(dwmapi);
+	return __DwmSetWindowAttribute;
 }
 
 void Cleanup()

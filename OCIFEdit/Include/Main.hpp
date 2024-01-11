@@ -105,6 +105,7 @@ extern bool                              ResizeImagePopupOpened;
 
 bool Initialize();
 bool LoadShaders();
+bool TryEnableDarkTitlebar();
 void StartLoop();
 void Cleanup();
 

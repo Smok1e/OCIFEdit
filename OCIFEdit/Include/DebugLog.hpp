@@ -3,6 +3,7 @@
 #include <string>
 #include <cstdlib>
 #include <format>
+#include <iostream>
 
 //===========================================
 
@@ -19,8 +20,6 @@ public:
 
 	DebugLog() = default;
 	DebugLog(const DebugLog& copy) = delete;
-
-	void append(MessageType type, std::string_view text);
 
 	template<typename ...Args>
 	void print(MessageType type, std::string_view format, Args&&... args);
@@ -51,6 +50,8 @@ protected:
 	std::deque<std::pair<MessageType, std::string>> m_buffer;
 	bool m_should_scroll_to_bottom { false };
 
+	void append(MessageType type, std::string_view text);
+
 };
 
 //===========================================
@@ -58,7 +59,9 @@ protected:
 template<typename ...Args>
 void DebugLog::print(MessageType type, std::string_view format, Args&&... args)
 {
-	append(type, std::vformat(format, std::make_format_args(args...)));
+	std::string text = std::vformat(format, std::make_format_args(args...));
+	append(type, text);
+	std::cout << text << std::endl;
 }
 
 //===========================================
