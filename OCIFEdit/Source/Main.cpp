@@ -614,6 +614,12 @@ void OnImageResize()
 
 void OnKeyPressed(sf::Keyboard::Key key)
 {
+	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
+	{
+		OnKeyboardShortcut(key);
+		return;
+	}
+
 	for (const auto& tool: Tools)
 	{
 		if (tool->getHotkey() == key)
@@ -621,12 +627,6 @@ void OnKeyPressed(sf::Keyboard::Key key)
 			CurrentTool = tool;
 			return;
 		}
-	}
-
-	if (sf::Keyboard::isKeyPressed(sf::Keyboard::LControl))
-	{
-		OnKeyboardShortcut(key);
-		return;
 	}
 
 	switch (key)
