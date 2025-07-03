@@ -794,14 +794,14 @@ void ProcessGUIFileMenu()
 	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("Nothing to save");
 
-	if (ImGui::MenuItem(MD_ICON_SAVE_AS " Save as...", "CTRL + SHIFT + S", nullptr, ImageLoadedFromFile))
+	if (ImGui::MenuItem(MD_ICON_SAVE_AS " Save as...", "CTRL + SHIFT + S", nullptr, ImageLoaded))
 		OnFileSaveAs();
 
 	// Show tooltip if the save as item is disabled
 	if (!ImageLoaded && ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
 		ImGui::SetTooltip("Nothing to save");
 
-	if (ImGui::MenuItem(MD_ICON_DRIVE_FILE_MOVE " Export", "CTRL + E", nullptr, ImageLoadedFromFile))
+	if (ImGui::MenuItem(MD_ICON_DRIVE_FILE_MOVE " Export", "CTRL + E", nullptr, ImageLoaded))
 		OnFileExport();
 
 	// Show tooltip if the export item is disabled
